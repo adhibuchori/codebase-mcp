@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "tabWidth": 2,
+  "useTabs": false,
+  "printWidth": 100,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "semi": true,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "ignorePatterns": [
+    "node_modules/",
+    "coverage/",
+    ".cache/",
+    "assets/",
+    "tests/fixtures/",
+    "scripts/check/comment-style.mjs",
+    "scripts/check/coverage-files.mjs",
+    "scripts/check/coverage-policy.mjs",
+    "scripts/check/folder-shape.mjs",
+    "scripts/check/module-mocks.ts",
+    "scripts/check/readme-pair.mjs"
+  ]
+}

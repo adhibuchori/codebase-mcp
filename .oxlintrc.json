@@ -1,0 +1,296 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "promise",
+    "node"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "rules": {
+    "no-console": "error",
+    "no-await-in-loop": "error",
+    "import/no-cycle": "error",
+    "max-lines": [
+      "error",
+      {
+        "max": 200,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "max-lines-per-function": [
+      "error",
+      {
+        "max": 40,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "complexity": [
+      "error",
+      {
+        "max": 10
+      }
+    ],
+    "max-depth": [
+      "error",
+      {
+        "max": 4
+      }
+    ],
+    "max-params": [
+      "error",
+      {
+        "max": 3
+      }
+    ],
+    "max-nested-callbacks": [
+      "error",
+      {
+        "max": 3
+      }
+    ],
+    "promise/prefer-await-to-then": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "kebabCase"
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-floating-promises": [
+      "error",
+      {
+        "checkThenables": true
+      }
+    ],
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "typescript/only-throw-error": "error",
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "Bun",
+        "message": "Bun APIs live in src/adapters/runtime and src/adapters/index only; everything else must also run on Node (AGENTS.md Rule 50)."
+      }
+    ],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "process",
+        "property": "env",
+        "message": "Read validated values from src/env.ts. It is the only file in src/ allowed to touch process.env (AGENTS.md Rule 22)."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "max-lines-per-function": "off",
+        "max-nested-callbacks": [
+          "error",
+          {
+            "max": 5
+          }
+        ],
+        "no-await-in-loop": "off"
+      }
+    },
+    {
+      "files": [
+        "scripts/**",
+        ".claude/hooks/**"
+      ],
+      "rules": {
+        "no-console": "off",
+        "no-await-in-loop": "off",
+        "no-restricted-properties": "off",
+        "no-restricted-globals": "off"
+      }
+    },
+    {
+      "files": [
+        "src/env.ts",
+        "src/testing/**"
+      ],
+      "rules": {
+        "no-restricted-properties": "off"
+      }
+    },
+    {
+      "files": [
+        "src/adapters/runtime/**",
+        "src/adapters/index/sqlite.ts"
+      ],
+      "rules": {
+        "no-restricted-globals": "off"
+      }
+    },
+    {
+      "files": [
+        "src/adapters/logger/**"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "src/core/**",
+        "src/languages/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:fs",
+                  "node:fs/*",
+                  "node:child_process",
+                  "node:worker_threads",
+                  "node:net",
+                  "node:http",
+                  "bun:*",
+                  "hono",
+                  "hono/*",
+                  "@modelcontextprotocol/*",
+                  "**/adapters/**",
+                  "**/engine/**",
+                  "**/tools/**",
+                  "**/http/**",
+                  "**/indexer/**",
+                  "**/config/**"
+                ],
+                "message": "core/ and languages/ are pure: no I/O, no framework, no outer layer (AGENTS.md Rule 7, .claude/rules/architecture/hexagonal.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/engine/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:fs",
+                  "node:fs/*",
+                  "node:child_process",
+                  "bun:*",
+                  "hono",
+                  "hono/*",
+                  "@modelcontextprotocol/*",
+                  "**/adapters/**",
+                  "**/tools/**",
+                  "**/http/**"
+                ],
+                "message": "engine/ talks to the outside world through ports/ only; the composition root hands it adapters (AGENTS.md Rule 7)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/tools/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:fs",
+                  "node:fs/*",
+                  "node:child_process",
+                  "bun:*",
+                  "hono",
+                  "hono/*",
+                  "**/adapters/**",
+                  "**/http/**",
+                  "**/indexer/**"
+                ],
+                "message": "A tool is thin glue: it validates input, calls engine/ and formats text. I/O lives behind ports/ (AGENTS.md Rule 5)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/adapters/**",
+        "src/indexer/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/tools/**",
+                  "**/http/**",
+                  "**/engine/**"
+                ],
+                "message": "Adapters and the indexer never reach back into the application layers (AGENTS.md Rule 9)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off",
+        "no-restricted-properties": "off",
+        "no-restricted-globals": "off",
+        "max-params": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    "coverage/",
+    ".cache/",
+    "assets/",
+    "tests/fixtures/",
+    "scripts/check/comment-style.mjs",
+    "scripts/check/coverage-files.mjs",
+    "scripts/check/coverage-policy.mjs",
+    "scripts/check/folder-shape.mjs",
+    "scripts/check/module-mocks.ts",
+    "scripts/check/readme-pair.mjs"
+  ]
+}

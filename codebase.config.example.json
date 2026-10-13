@@ -1,0 +1,14 @@
+{
+  "$schema": "./codebase.config.schema.json",
+  "roots": [
+    { "path": "~/work", "maxDepth": 3, "exclude": ["archive/**"] }
+  ],
+  "repos": [
+    { "name": "legacy-billing", "path": "D:/code/legacy-billing", "group": "payments" }
+  ],
+  "exclude": ["**/*.min.js", "**/__snapshots__/**"],
+  "blocked": ["\\.sql$"],
+  "logging": { "loggerNames": ["AuditLog"] },
+  "limits": { "maxResponseTokens": 6000, "maxFileBytes": 1048576, "searchTimeoutMs": 20000, "maxReadLines": 200 },
+  "index": { "enabled": true, "dir": ".cache/index", "refreshSeconds": 30, "rescanMinutes": 10 }
+}

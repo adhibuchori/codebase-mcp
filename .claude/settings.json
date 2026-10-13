@@ -1,5 +1,19 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "allow": [
+      "Bash(bun run test:*)",
+      "Bash(bun test:*)",
+      "Bash(bun run type-check:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run format:*)",
+      "Bash(bun run fl:*)",
+      "Bash(bun run check:*)",
+      "Bash(bun run gates:*)",
+      "Bash(bash scripts/check/gates.sh:*)",
+      "Bash(bun run eval:*)",
+      "Bash(bun run doctor:*)"
+    ],
     "deny": [
       "Read(**/.env)",
       "Read(**/.env.local)",
@@ -19,6 +33,19 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-env.py\"",
             "statusMessage": "Checking for .env access",
             "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.ts\"",
+            "timeout": 60,
+            "statusMessage": "Formatting and linting the edited file"
           }
         ]
       }

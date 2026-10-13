@@ -3,7 +3,16 @@
 .env.*
 !.env.example
 
+# Machine-local configuration: which folders hold your repos
+codebase.config.json
+
+# Dependencies, caches and generated reports
 node_modules/
+.cache/
+coverage/
+
+# Private eval scenarios: they name company repos and code
+*.private.json
 
 # OS files
 .DS_Store

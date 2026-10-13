@@ -1,20 +1,59 @@
 {
   "name": "codebase-mcp",
-  "version": "1.0.0",
-  "description": "Read-only MCP server that lets ClickUp Brain read your local codebase (Mac/Windows)",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Read-only MCP server that lets AI assistants search and read many local repos — fast, token-efficient, built for debugging microservices (Mac and Windows).",
   "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "bun server.js",
-    "tunnel": "bun tunnel.js",
-    "check": "bun check.js",
-    "test": "bun test",
-    "gen-key": "bun -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  "license": "UNLICENSED",
+  "engines": {
+    "bun": ">=1.3.12",
+    "node": ">=22.18.0"
   },
-  "engines": { "bun": ">=1.1", "node": ">=18" },
+  "scripts": {
+    "start": "bun src/index.ts start",
+    "stdio": "bun src/index.ts stdio",
+    "index": "bun src/index.ts index",
+    "tunnel": "bun scripts/tunnel/tunnel.ts",
+    "check": "bun scripts/remote/remote-check.ts",
+    "setup": "bun scripts/setup/setup.ts",
+    "doctor": "bun scripts/doctor/doctor.ts",
+    "gen-key": "bun scripts/keys/gen-key.ts",
+    "eval": "bun scripts/eval/run-eval.ts",
+    "bench": "bun scripts/bench/scale.ts",
+    "grammars:sync": "bun scripts/grammars/sync.ts",
+    "config:schema": "bun scripts/config/write-schema.ts",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage && node scripts/check/coverage-files.mjs",
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint --type-aware --deny-warnings src scripts .claude/hooks",
+    "format": "oxfmt src scripts .claude/hooks",
+    "format:check": "oxfmt --check src scripts .claude/hooks",
+    "fl": "bun run format && bun run lint",
+    "fl:ci": "bun run format:check && oxlint --type-aware --deny-warnings src scripts .claude/hooks",
+    "check:comments": "node scripts/check/comment-style.mjs",
+    "check:dead-code": "knip-bun",
+    "check:folder-shape": "node scripts/check/folder-shape.mjs",
+    "check:coverage-policy": "node scripts/check/coverage-policy.mjs",
+    "check:mocks": "bun scripts/check/module-mocks.ts",
+    "check:version": "bun scripts/check/version-sync.ts",
+    "gates": "bash scripts/check/gates.sh",
+    "prepare": "husky"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "express": "^5.1.0",
-    "zod": "^4.0.0"
+    "@hono/node-server": "2.1.5",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@vscode/ripgrep": "1.18.0",
+    "hono": "4.13.13",
+    "web-tree-sitter": "0.27.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.12",
+    "husky": "9.1.7",
+    "knip": "6.41.0",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "oxlint-tsgolint": "7.0.2004",
+    "typescript": "7.0.2"
   }
 }

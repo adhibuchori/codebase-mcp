@@ -1,0 +1,4 @@
+[project]
+name = "notifications"
+version = "1.0.0"
+dependencies = ["fastapi==0.115.0", "kafka-python==2.0.2"]
