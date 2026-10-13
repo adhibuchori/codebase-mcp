@@ -28,6 +28,27 @@ flowchart TB
   indexer -- "menjaganya tetap baru" --> index
 ```
 
+**Cara kerjanya, secara sederhana:**
+
+1. **Anda bertanya ke ClickUp Brain**, misalnya "kenapa checkout gagal dengan error ini?". Brain lalu
+   memanggil codebase-mcp untuk melihat kodenya.
+2. **Panggilan itu sampai ke laptop Anda lewat tunnel** yang dibuka oleh `bun tunnel`: Cloudflare di
+   Mac, Pinggy di Windows. Server-nya sendiri hanya mendengarkan di laptop Anda (`127.0.0.1`), dan
+   setiap panggilan wajib membawa API key Anda.
+3. **codebase-mcp bertanya dulu ke index file mana saja yang mungkin cocok**, lalu hanya membaca
+   file-file itu dan mengirim balik beberapa baris yang penting.
+4. **Index bekerja seperti indeks di bagian belakang buku.** Isinya catatan potongan teks pendek mana
+   yang ada di file mana, ditambah nama fungsi dan class, sehingga pencarian di ratusan repo cukup
+   membuka beberapa file saja, bukan semuanya. Index tidak menyimpan salinan kode Anda. Lokasinya di
+   `.cache/index`, dan boleh dihapus kapan saja karena akan dibangun ulang.
+5. **Indexer di background menjaga index tetap baru dengan sendirinya.** Setiap 30 detik ia mengecek
+   status git setiap repo, jadi commit, pull, atau pindah branch cepat tertangkap. Setiap 10 menit ia
+   juga mencari file yang Anda ubah tapi belum di-commit. Hanya file yang berubah yang di-index ulang.
+
+Jawaban selalu dibaca langsung dari file di disk, bukan dari index. Kalau index sedang tertinggal
+sebentar, pencarian mungkin belum menemukan baris yang baru Anda tulis, tapi tidak akan pernah
+menampilkan baris lama.
+
 - **Dibuat untuk debugging microservices.** Tempel stack trace, baris log, atau URL yang gagal,
   lalu dapatkan kode di baliknya. Telusuri route HTTP, method gRPC, atau topic Kafka sampai ke
   handler dan pemanggilnya di service lain.
