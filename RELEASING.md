@@ -62,14 +62,27 @@ Tags never move. A mistake in a release is fixed by a new patch release.
 
 ## GitHub settings
 
-Set these once for `adhibuchori/codebase-mcp`. Some need a paid plan for a private repository; when
-one is unavailable, the pre-commit hook and CI still guard the same thing.
+The repository is public, and every setting below is set and free for a public repository. If it
+ever goes private again, rulesets, secret scanning and the two security workflows need a paid plan.
+The pre-commit hook and CI still guard the same things without them.
 
-- A ruleset on `main`: require a pull request, require the **Self Test** status check, and block
-  force pushes and deletion.
-- A tag ruleset on `v*` that blocks updates and deletion.
+- A ruleset on `main`:
+  - block force pushes and deletion;
+  - require a pull request, merged with a merge commit;
+  - require the **Self Test** status check from GitHub Actions;
+  - no bypass, not even for admins.
+- A tag ruleset on `v*` that blocks updates, force pushes and deletion.
 - Immutable releases.
-- Actions: workflow permissions read-only, and no workflow may approve pull requests.
-- Secret scanning and push protection, when available.
-- When GitHub Code Security is available, set the repository variable `CODE_SECURITY=true` to turn
-  on the CodeQL and dependency-review workflows.
+- Merge commits only, and delete the branch on merge.
+- Actions:
+  - workflow permissions are read-only;
+  - no workflow may approve pull requests;
+  - every action must be pinned to a full commit SHA.
+- Secret scanning with **push protection**.
+- **Private vulnerability reporting.** The advisory link in [SECURITY.md](SECURITY.md) depends on it.
+- **Dependabot alerts**, which also turn on the dependency graph that the dependency-review workflow
+  needs.
+
+The CodeQL and dependency-review workflows run on every pull request in a public repository. In a
+private one they run only when GitHub Code Security is available and the repository variable
+`CODE_SECURITY` is `true`.

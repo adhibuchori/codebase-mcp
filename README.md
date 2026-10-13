@@ -27,6 +27,26 @@ flowchart TB
   indexer -- "keeps it fresh" --> index
 ```
 
+**How it works, in plain words:**
+
+1. **You ask ClickUp Brain**, for example "why does checkout fail with this error?". Brain calls
+   codebase-mcp to look at the code.
+2. **The call reaches your laptop through a tunnel** that `bun tunnel` opens: Cloudflare on a Mac,
+   Pinggy on Windows. The server itself only listens on your own machine (`127.0.0.1`), and every
+   call must carry your API key.
+3. **codebase-mcp first asks the index which files can match**, then reads only those files and
+   sends back the few lines that matter.
+4. **The index works like the index at the back of a book.** It notes which short pieces of text
+   appear in which file, plus the names of functions and classes, so a search across hundreds of
+   repos opens a handful of files instead of all of them. It keeps no copy of your code. It lives in
+   `.cache/index`, and you can delete it at any time; it is rebuilt.
+5. **The background indexer keeps the index up to date on its own.** Every 30 seconds it checks each
+   repo's git state, so a commit, a pull or a branch switch is picked up quickly. Every 10 minutes it
+   also looks for files you edited but have not committed. Only changed files are indexed again.
+
+Answers are always read from the files on disk, never from the index. If the index is a moment
+behind, a search can miss a line you just wrote, but it never shows you an old one.
+
 - **Built for debugging microservices.** Paste a stack trace, a log line or a failing URL and get
   the code behind it. Follow an HTTP route, a gRPC method or a Kafka topic to its handler and its
   callers in other services.
