@@ -486,32 +486,32 @@ editor yang terus menjalankan `git status` bisa menyebabkannya.
 
 ## Pengembangan
 
-```text
+```sh
 codebase-mcp/
 ├── src/
-│   ├── index.ts         entry CLI: start (HTTP), stdio, index
-│   ├── app.ts           aplikasi Hono: urutan middleware, /health, /mcp
-│   ├── env.ts           satu-satunya pembaca environment variable
-│   ├── core/            logika murni: ranking, budget, perencanaan query, parsing stack dan log,
-│   │                    pencocokan route, keamanan
-│   ├── ports/           interface yang dibutuhkan engine
-│   ├── adapters/        I/O: file system, ripgrep, index SQLite, tree-sitter, git, runtime (Bun atau Node)
-│   ├── languages/       satu folder per bahasa: ekstensi, grammar, pola simbol, route, parser stack
-│   ├── config/          skema codebase.config.json, pemuatan config, discovery repo, registry repo
-│   ├── indexer/         indexer di background: inventory, shard per repo, worker thread, freshness
-│   ├── engine/          layanan aplikasi: query planner, simbol, katalog, stack trace, sumber log,
-│   │                    endpoint
-│   ├── tools/           sembilan tool MCP: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
-│   ├── http/            middleware Hono dan transport MCP
-│   ├── composition/     merangkai adapter menjadi runtime (composition root)
-│   ├── cli/             banner saat start
-│   └── testing/         helper test bersama: workspace sementara, runtime test lengkap
+│   ├── index.ts         # entry CLI: start (HTTP), stdio, index
+│   ├── app.ts           # aplikasi Hono: urutan middleware, /health, /mcp
+│   ├── env.ts           # satu-satunya pembaca environment variable
+│   ├── core/            # logika murni: ranking, budget, perencanaan query, parsing stack dan log,
+│   │                    # pencocokan route, keamanan
+│   ├── ports/           # interface yang dibutuhkan engine
+│   ├── adapters/        # I/O: file system, ripgrep, index SQLite, tree-sitter, git, runtime (Bun atau Node)
+│   ├── languages/       # satu folder per bahasa: ekstensi, grammar, pola simbol, route, parser stack
+│   ├── config/          # skema codebase.config.json, pemuatan config, discovery repo, registry repo
+│   ├── indexer/         # indexer di background: inventory, shard per repo, worker thread, freshness
+│   ├── engine/          # layanan aplikasi: query planner, simbol, katalog, stack trace, sumber log,
+│   │                    # endpoint
+│   ├── tools/           # sembilan tool MCP: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
+│   ├── http/            # middleware Hono dan transport MCP
+│   ├── composition/     # merangkai adapter menjadi runtime (composition root)
+│   ├── cli/             # banner saat start
+│   └── testing/         # helper test bersama: workspace sementara, runtime test lengkap
 ├── assets/
-│   ├── grammars/        grammar WASM tree-sitter, versinya dipin
-│   └── queries/         query simbol per grammar
-├── scripts/             setup, tunnel, doctor, remote check, key, eval, bench, grammar, CI, quality gate
+│   ├── grammars/        # grammar WASM tree-sitter, versinya dipin
+│   └── queries/         # query simbol per grammar
+├── scripts/             # setup, tunnel, doctor, remote check, key, eval, bench, grammar, CI, quality gate
 └── tests/
-    └── fixtures/repos/  enam mini service (Java, Go, Node, Python, .NET, proto) untuk test dan eval
+    └── fixtures/repos/  # enam mini service (Java, Go, Node, Python, .NET, proto) untuk test dan eval
 ```
 
 Arsitektur, alur request, dan alasan di baliknya ada di
