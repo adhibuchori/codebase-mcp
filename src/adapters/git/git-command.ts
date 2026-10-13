@@ -4,7 +4,6 @@
  * fsmonitor off (it runs a program on status), no pager, no prompts, no optional locks, literal
  * pathspecs, and no shell. Callers add --end-of-options before any user value.
  */
-import { devNull } from 'node:os';
 import { spawnCollect, type SpawnResult } from '../process/spawn-collect.ts';
 
 export interface GitContext {
@@ -12,6 +11,13 @@ export interface GitContext {
   readonly baseEnv: Readonly<Record<string, string>>;
   readonly timeoutMs: number;
 }
+
+/**
+ * "No global config" as git understands it everywhere. Git for Windows maps the literal "/dev/null"
+ * to NUL itself, while os.devNull there ("\\.\nul") makes every git command fail with "unable to
+ * access '\\.\nul': Invalid argument".
+ */
+const NO_CONFIG_FILE = '/dev/null';
 
 const GLOBAL_ARGS = [
   '-c',
@@ -30,7 +36,7 @@ function gitEnv(baseEnv: Readonly<Record<string, string>>): Record<string, strin
   return {
     ...baseEnv,
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: devNull,
+    GIT_CONFIG_GLOBAL: NO_CONFIG_FILE,
     GIT_TERMINAL_PROMPT: '0',
     GIT_OPTIONAL_LOCKS: '0',
     GIT_PAGER: 'cat',

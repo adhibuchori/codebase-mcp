@@ -5,7 +5,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { devNull, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const FIXTURES = join(import.meta.dirname, '..', '..', '..', 'tests', 'fixtures', 'repos');
@@ -20,7 +20,12 @@ export interface Workspace {
   readonly cleanup: () => void;
 }
 
-const GIT_ENV = { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: devNull, GIT_TERMINAL_PROMPT: '0' };
+/* "/dev/null", not os.devNull: Git for Windows maps the literal to NUL and rejects "\\.\nul". */
+const GIT_ENV = {
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_TERMINAL_PROMPT: '0',
+};
 
 /** Runs git in a folder with an isolated config; throws with git's message when it fails. */
 export function git(cwd: string, args: readonly string[]): string {

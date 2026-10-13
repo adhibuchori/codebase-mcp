@@ -19,7 +19,11 @@ export MCP_API_KEY
 # .cache/ are never touched when this runs on a laptop.
 work="$(mktemp -d)"
 export CODEBASE_CONFIG="$work/codebase.config.json"
-root="$(pwd)"
+# Paths written into the JSON must be native: Git Bash on Windows prints /d/a/… from pwd, which Node
+# cannot open; pwd -W prints D:/a/…. Elsewhere pwd -W does not exist and plain pwd is right.
+native() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
+root="$(native .)"
+work_native="$(native "$work")"
 
 cat >"$CODEBASE_CONFIG" <<JSON
 {
@@ -28,7 +32,7 @@ cat >"$CODEBASE_CONFIG" <<JSON
     { "name": "payments-go", "path": "$root/tests/fixtures/repos/payments-go", "group": "shop" },
     { "name": "contracts-proto", "path": "$root/tests/fixtures/repos/contracts-proto", "group": "shop" }
   ],
-  "index": { "dir": "$work/index" }
+  "index": { "dir": "$work_native/index" }
 }
 JSON
 
