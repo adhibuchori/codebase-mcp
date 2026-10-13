@@ -478,33 +478,33 @@ running `git status` can do this.
 
 ## Development
 
-```text
+```sh
 codebase-mcp/
 ├── src/
-│   ├── index.ts         CLI entry: start (HTTP), stdio, index
-│   ├── app.ts           the Hono app: middleware order, /health, /mcp
-│   ├── env.ts           the only reader of environment variables
-│   ├── core/            pure logic: ranking, budgets, query planning, stack and log parsing,
-│   │                    route matching, security
-│   ├── ports/           interfaces the engine depends on
-│   ├── adapters/        I/O: file system, ripgrep, SQLite index, tree-sitter, git, runtime (Bun or Node)
-│   ├── languages/       one folder per language: extensions, grammar, symbol patterns, routes,
-│   │                    stack parser
-│   ├── config/          codebase.config.json schema, loading, repo discovery, the repo registry
-│   ├── indexer/         the background indexer: inventory, per-repo shards, worker threads, freshness
-│   ├── engine/          application services: search planner, symbols, catalog, stack traces,
-│   │                    log sources, endpoints
-│   ├── tools/           the nine MCP tools: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
-│   ├── http/            Hono middlewares and the MCP transport
-│   ├── composition/     wires adapters into the runtime (the composition root)
-│   ├── cli/             the start banner
-│   └── testing/         shared test helpers: temporary workspaces, a full test runtime
+│   ├── index.ts         # CLI entry: start (HTTP), stdio, index
+│   ├── app.ts           # the Hono app: middleware order, /health, /mcp
+│   ├── env.ts           # the only reader of environment variables
+│   ├── core/            # pure logic: ranking, budgets, query planning, stack and log parsing,
+│   │                    # route matching, security
+│   ├── ports/           # interfaces the engine depends on
+│   ├── adapters/        # I/O: file system, ripgrep, SQLite index, tree-sitter, git, runtime (Bun or Node)
+│   ├── languages/       # one folder per language: extensions, grammar, symbol patterns, routes,
+│   │                    # stack parser
+│   ├── config/          # codebase.config.json schema, loading, repo discovery, the repo registry
+│   ├── indexer/         # the background indexer: inventory, per-repo shards, worker threads, freshness
+│   ├── engine/          # application services: search planner, symbols, catalog, stack traces,
+│   │                    # log sources, endpoints
+│   ├── tools/           # the nine MCP tools: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
+│   ├── http/            # Hono middlewares and the MCP transport
+│   ├── composition/     # wires adapters into the runtime (the composition root)
+│   ├── cli/             # the start banner
+│   └── testing/         # shared test helpers: temporary workspaces, a full test runtime
 ├── assets/
-│   ├── grammars/        tree-sitter WASM grammars, pinned
-│   └── queries/         symbol queries per grammar
-├── scripts/             setup, tunnel, doctor, remote check, keys, eval, bench, grammars, CI, quality gates
+│   ├── grammars/        # tree-sitter WASM grammars, pinned
+│   └── queries/         # symbol queries per grammar
+├── scripts/             # setup, tunnel, doctor, remote check, keys, eval, bench, grammars, CI, quality gates
 └── tests/
-    └── fixtures/repos/  six mini services (Java, Go, Node, Python, .NET, proto) for tests and the eval
+    └── fixtures/repos/  # six mini services (Java, Go, Node, Python, .NET, proto) for tests and the eval
 ```
 
 The architecture, the request flow and the reasons behind them are in
