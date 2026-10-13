@@ -1,0 +1,15 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# The CI Self Test workflow runs the same commands on every pull request, plus the macOS, Windows
+# and Node-runtime jobs that a laptop cannot run in one go.
+all	@format
+all	bash scripts/check/secrets.sh
+all	node scripts/check/readme-pair.mjs --staged
+code	bun run type-check
+code	bun run check:comments
+code	bun run check:dead-code
+code	bash scripts/check/double-assertion.sh
+code	bun run check:folder-shape
+code	bun run check:mocks
+code	bun run check:coverage-policy
+code	bun run test:coverage

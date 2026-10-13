@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "roots": {
+      "default": [],
+      "description": "Folders whose git repos are all served.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A folder that holds repos, e.g. \"~/work\". Every git repo below it is found automatically."
+          },
+          "maxDepth": {
+            "default": 3,
+            "description": "How many folder levels below path to look for repos.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "exclude": {
+            "default": [],
+            "description": "Globs (relative to path) of folders to skip, e.g. \"archive/**\".",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "group": {
+            "description": "Fixed group for every repo found here; by default the first folder below path is the group.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "repos": {
+      "default": [],
+      "description": "Individual repos, in addition to the roots.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Repo name shown to the assistant."
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Folder of the repo."
+          },
+          "group": {
+            "default": "",
+            "description": "Optional group, e.g. the team or domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "exclude": {
+      "default": [],
+      "description": "Globs of files that are never searched or indexed (on top of .gitignore).",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocked": {
+      "default": [],
+      "description": "Extra regexes for file names that must never be read (on top of the built-in secret list).",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "logging": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "loggerNames": {
+          "default": [],
+          "description": "In-house logger names that mark a log statement, e.g. \"AuditLog\".",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "limits": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "maxResponseTokens": {
+          "default": 6000,
+          "description": "Upper bound for one tool answer, in tokens (about 4 characters each).",
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 50000
+        },
+        "maxFileBytes": {
+          "default": 1048576,
+          "description": "Files larger than this are listed but never read, searched or indexed.",
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 52428800
+        },
+        "searchTimeoutMs": {
+          "default": 20000,
+          "description": "A search stops after this long and returns what it found.",
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 120000
+        },
+        "maxReadLines": {
+          "default": 200,
+          "description": "Most lines read_code returns in one call.",
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 2000
+        }
+      },
+      "additionalProperties": false
+    },
+    "index": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "Build and refresh the background index (recommended).",
+          "type": "boolean"
+        },
+        "dir": {
+          "default": ".cache/index",
+          "description": "Where the per-repo index shards live, relative to the project folder.",
+          "type": "string"
+        },
+        "refreshSeconds": {
+          "default": 30,
+          "description": "How often to check whether a repo changed (HEAD, git index).",
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 3600
+        },
+        "rescanMinutes": {
+          "default": 10,
+          "description": "How often to re-check every file for edits git has not seen yet.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1440
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

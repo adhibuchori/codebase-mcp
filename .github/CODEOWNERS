@@ -1,0 +1,23 @@
+# Code owners: the reviewer GitHub requests on every pull request that touches a matching path.
+# The last matching line wins. Everything has one owner; the lines below name the paths where a
+# change decides what leaves the laptop or what CI trusts, so a ruleset can require their review
+# even when the catch-all is relaxed.
+
+*                                   @adhibuchori
+
+# CI and the scripts it trusts to judge every pull request.
+/.github/                           @adhibuchori
+/scripts/check/                     @adhibuchori
+/scripts/ci/                        @adhibuchori
+
+# What may be read and what may leave: path rules, secrets, git hardening, auth, the tool contract.
+/src/core/security/                 @adhibuchori
+/src/engine/file-access.ts          @adhibuchori
+/src/adapters/git/                  @adhibuchori
+/src/http/                          @adhibuchori
+/src/app.ts                         @adhibuchori
+/src/tools/registry/                @adhibuchori
+
+# Claude Code hooks and permissions.
+/.claude/hooks/                     @adhibuchori
+/.claude/settings.json              @adhibuchori

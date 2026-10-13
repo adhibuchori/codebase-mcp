@@ -1,0 +1,17 @@
+# Gitleaks configuration, adapted from agent-config-kit's agent-core template.
+#
+# The pre-commit gate (scripts/check/secrets.sh in scripts/check/gates.list) and the CI Self Test
+# workflow both read it. The default ruleset stays on; this file only narrows it where a generic rule
+# misfires. Keep every exception to one exact value or shape: a broad allowlist (a whole folder,
+# every Markdown file, a key-name pattern) turns the scanner into decoration. Tests build their fake
+# secrets at runtime (string concatenation), so no fixture needs an exception here.
+
+[extend]
+useDefault = true
+
+# A quoted ${VARIABLE} is a reference the shell or Claude Code resolves (.mcp.json, workflow files),
+# never a value. Only that exact shape passes; a literal token next to it is still reported.
+[[allowlists]]
+description = "Environment variable references"
+regexTarget = "match"
+regexes = ['''['"]\$\{[A-Z_][A-Z0-9_]*\}['"]''']

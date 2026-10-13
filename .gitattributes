@@ -1,0 +1,8 @@
+# Text files are stored and checked out with LF everywhere, so tests and the fixture repos read the
+# same bytes on Windows as on a Mac. Windows scripts keep CRLF, which cmd.exe expects.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.wasm binary
+*.sqlite binary

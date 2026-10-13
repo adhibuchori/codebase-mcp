@@ -1,0 +1,25 @@
+{
+  "description": "Debugging tasks over the fixture microservices (tests/fixtures/repos): a Spring orders service, a Go payments service, a Node gateway, a FastAPI notifier, an ASP.NET billing service and a proto contract. Each expects a file (or file:line) among the first `within` references the tool returns.",
+  "scenarios": [
+    { "id": "error-message-java", "tool": "search_code", "args": { "query": "Order already cancelled" }, "expect": ["orders-java/src/main/java/com/acme/orders/service/OrderService.java:29"], "within": 1 },
+    { "id": "error-message-dotnet", "tool": "search_code", "args": { "query": "Invoice already paid" }, "expect": ["billing-dotnet/Controllers/InvoicesController.cs"], "within": 1 },
+    { "id": "identifier-word", "tool": "search_code", "args": { "query": "Refund", "mode": "word" }, "expect": ["payments-go/internal/payment/service.go", "payments-go/internal/payment/handler.go"], "within": 2 },
+    { "id": "definition-java", "tool": "find_symbol", "args": { "name": "OrderService" }, "expect": ["orders-java/src/main/java/com/acme/orders/service/OrderService.java"], "within": 1 },
+    { "id": "definition-go-method", "tool": "find_symbol", "args": { "name": "Refund" }, "expect": ["payments-go/internal/payment/service.go", "payments-go/internal/payment/handler.go"], "within": 2 },
+    { "id": "definition-python", "tool": "find_symbol", "args": { "name": "render" }, "expect": ["notifications-python/app/main.py"], "within": 1 },
+    { "id": "references", "tool": "find_symbol", "args": { "name": "cancelOrder", "mode": "references" }, "expect": ["gateway-node/src/server.ts"], "within": 2 },
+    { "id": "file-by-name", "tool": "find_files", "args": { "query": "order controller" }, "expect": ["orders-java/src/main/java/com/acme/orders/api/OrderController.java"], "within": 1 },
+    { "id": "stacktrace-java", "tool": "triage_error", "args": { "text": "java.lang.IllegalStateException: Order already cancelled\n\tat com.acme.orders.service.OrderService.cancel(OrderService.java:29)\n\tat com.acme.orders.api.OrderController.cancel(OrderController.java:24)\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:897)" }, "expect": ["orders-java/src/main/java/com/acme/orders/service/OrderService.java:29"], "within": 1 },
+    { "id": "stacktrace-python", "tool": "triage_error", "args": { "text": "Traceback (most recent call last):\n  File \"/srv/app/consumer.py\", line 16, in consume\n    render(\"order-cancelled\", order_id)\n  File \"/srv/app/main.py\", line 11, in render\n    raise ValueError(f\"Unknown template: {name}\")\nValueError: Unknown template: order-cancel" }, "expect": ["notifications-python/app/main.py:11"], "within": 1 },
+    { "id": "stacktrace-node", "tool": "triage_error", "args": { "text": "Error: Upstream timeout for orders service\n    at cancelOrder (/app/src/clients/orders-client.ts:13:11)\n    at async /app/src/server.ts:15:14" }, "expect": ["gateway-node/src/clients/orders-client.ts:13"], "within": 1 },
+    { "id": "log-line-java", "tool": "triage_error", "args": { "text": "2026-10-13 08:15:30.123 WARN [http-nio-8081-exec-3] c.a.o.s.OrderService - Order 42 cancelled after payment p-77 was refunded" }, "expect": ["orders-java/src/main/java/com/acme/orders/service/OrderService.java:32"], "within": 1 },
+    { "id": "log-line-go-wrapped", "tool": "triage_error", "args": { "text": "2026/10/13 08:15:30 refund failed for payment p-77: refund payment p-77: payment already refunded" }, "expect": ["payments-go/internal/payment/handler.go", "payments-go/internal/payment/service.go"], "within": 2 },
+    { "id": "log-line-python", "tool": "triage_error", "args": { "text": "ERROR app.consumer Failed to send notification for order 991" }, "expect": ["notifications-python/app/consumer.py"], "within": 1 },
+    { "id": "endpoint-handler-spring", "tool": "find_endpoint", "args": { "query": "POST /api/orders/42/cancel" }, "expect": ["orders-java/src/main/java/com/acme/orders/api/OrderController.java"], "within": 2 },
+    { "id": "endpoint-handler-gin", "tool": "find_endpoint", "args": { "query": "/api/payments/77/refund" }, "expect": ["payments-go/main.go"], "within": 1 },
+    { "id": "endpoint-callers", "tool": "find_endpoint", "args": { "query": "/api/payments/77/refund" }, "expect": ["orders-java/src/main/java/com/acme/orders/client/PaymentClient.java"], "within": 3 },
+    { "id": "topic-consumers", "tool": "find_endpoint", "args": { "query": "orders.cancelled" }, "expect": ["payments-go/internal/events/consumer.go", "notifications-python/app/consumer.py", "orders-java/src/main/java/com/acme/orders/events/OrderEvents.java"], "within": 3 },
+    { "id": "grpc-definition", "tool": "find_endpoint", "args": { "query": "OrderService/CancelOrder" }, "expect": ["contracts-proto/orders.proto"], "within": 1 },
+    { "id": "url-triage", "tool": "triage_error", "args": { "text": "POST /api/orders/42/cancel" }, "expect": ["orders-java/src/main/java/com/acme/orders/api/OrderController.java"], "within": 2 }
+  ]
+}

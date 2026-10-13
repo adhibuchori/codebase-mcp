@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package acme.orders.v1;
+
+service OrderService {
+  rpc GetOrder (GetOrderRequest) returns (OrderReply);
+  rpc CancelOrder (CancelOrderRequest) returns (OrderReply);
+}
+
+message GetOrderRequest {
+  string id = 1;
+}
+
+message CancelOrderRequest {
+  string id = 1;
+}
+
+message OrderReply {
+  string id = 1;
+  bool cancelled = 2;
+}

@@ -1,0 +1,31 @@
+# Dependency Review: fails a pull request that adds or bumps a dependency with a known
+# vulnerability of high or critical severity. It compares the dependency graph of the base and head
+# commits over the API: no checkout, no install, and no project code runs.
+#
+# A private repository needs GitHub Code Security for this; without it the job cannot work, so it
+# is skipped until the repository variable CODE_SECURITY is `true`.
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    if: ${{ !github.event.repository.private || vars.CODE_SECURITY == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime, development, unknown

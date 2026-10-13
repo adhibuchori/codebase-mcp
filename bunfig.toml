@@ -1,0 +1,42 @@
+[test]
+# Tests live in __tests__/ folders beside their source, under src/ and scripts/. Fixture repos under
+# tests/fixtures/ are data, never test files.
+root = "."
+
+# Applies only when --coverage is passed (`bun run test:coverage`); plain `bun test` stays fast.
+# 100 %, per file, lines and functions: bun measures no branches. Bun reports only the files a test
+# loaded, so test:coverage runs scripts/check/coverage-files.mjs after it to fail on any source file
+# no test imports. The text reporter must stay on: bun enforces the threshold only with it.
+#
+# The ignore list is closed (.claude/rules/typescript/coverage.md): composition roots, raw runtime
+# clients, type-only files and barrels. A file that is merely hard to test is never listed; it gets a
+# test or an injected dependency. scripts/check/coverage-policy.mjs refuses an entry without a reason.
+coverageThreshold = 1.0
+coverageSkipTestFiles = true
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
+coveragePathIgnorePatterns = [
+  # Composition roots: wiring with no logic of their own. The end-to-end tests drive them through the
+  # app factory instead.
+  "src/index.ts",
+  "src/app.ts",
+  "src/env.ts",
+
+  # Raw runtime clients: Bun.serve or @hono/node-server, worker_threads, and bun:sqlite or
+  # node:sqlite. Only one branch of each can run under the test runtime; the decisions around them
+  # live in measured files.
+  "src/adapters/runtime/**",
+  "src/adapters/index/sqlite.ts",
+  "src/indexer/worker-entry.ts",
+
+  # The shared test harness itself (workspaces, the test runtime): what measured files run under.
+  "src/testing/**",
+
+  # Type-only declarations: erased at runtime, so no test can load them.
+  "src/ports/**",
+  "src/**/*.types.ts",
+
+  # Developer and CI scripts: run by path from the shell, outside the application.
+  "scripts/**",
+  ".claude/**",
+]
