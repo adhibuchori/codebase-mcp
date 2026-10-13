@@ -7,12 +7,24 @@ Code, Cursor or any other MCP client) search, read and debug the code of **many 
 your laptop. Answers are small and ranked, and every result is a `repo/path:line` you can open next.
 It runs on a Mac and on a locked-down Windows work laptop.
 
-```
-                 ┌─ Mac:     Cloudflare Tunnel (+ Cloudflare Access) ─┐
-ClickUp Brain ───┤                                                    ├──> your laptop 127.0.0.1:8787/mcp
-                 └─ Windows: Pinggy (over the built-in ssh) ──────────┘          │
-                                                                                 ▼
-                         index (.cache/index) ◀── background indexer ──  every repo under ~/work
+```mermaid
+flowchart TB
+  brain["ClickUp Brain"]
+  subgraph tunnel["bun tunnel"]
+    cloudflare["Mac: Cloudflare Tunnel<br/>+ Cloudflare Access"]
+    pinggy["Windows: Pinggy<br/>over the built-in ssh"]
+  end
+  subgraph laptop["Your laptop"]
+    indexer["background indexer<br/>watches every repo"]
+    server["codebase-mcp<br/>127.0.0.1:8787/mcp"]
+    index[("index<br/>.cache/index")]
+    repos[("every repo<br/>under ~/work")]
+  end
+  brain -- HTTPS --> cloudflare --> server
+  brain -- HTTPS --> pinggy --> server
+  server -- "narrows the search" --> index
+  server -- "reads the matching files" --> repos
+  indexer -- "keeps it fresh" --> index
 ```
 
 - **Built for debugging microservices.** Paste a stack trace, a log line or a failing URL and get

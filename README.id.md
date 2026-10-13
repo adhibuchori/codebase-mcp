@@ -8,12 +8,24 @@ repository** di laptop Anda. Jawabannya ringkas dan berperingkat, dan setiap has
 `repo/path:line` yang bisa langsung dibuka berikutnya. Jalan di Mac maupun di laptop kantor Windows
 yang terkunci.
 
-```
-                 ┌─ Mac:     Cloudflare Tunnel (+ Cloudflare Access) ─┐
-ClickUp Brain ───┤                                                    ├──> laptop Anda 127.0.0.1:8787/mcp
-                 └─ Windows: Pinggy (lewat ssh bawaan) ───────────────┘          │
-                                                                                 ▼
-                         index (.cache/index) ◀── indexer di background ──  semua repo di bawah ~/work
+```mermaid
+flowchart TB
+  brain["ClickUp Brain"]
+  subgraph tunnel["bun tunnel"]
+    cloudflare["Mac: Cloudflare Tunnel<br/>+ Cloudflare Access"]
+    pinggy["Windows: Pinggy<br/>lewat ssh bawaan"]
+  end
+  subgraph laptop["Laptop Anda"]
+    indexer["indexer di background<br/>memantau setiap repo"]
+    server["codebase-mcp<br/>127.0.0.1:8787/mcp"]
+    index[("index<br/>.cache/index")]
+    repos[("semua repo<br/>di bawah ~/work")]
+  end
+  brain -- HTTPS --> cloudflare --> server
+  brain -- HTTPS --> pinggy --> server
+  server -- "mempersempit pencarian" --> index
+  server -- "membaca file yang cocok" --> repos
+  indexer -- "menjaganya tetap baru" --> index
 ```
 
 - **Dibuat untuk debugging microservices.** Tempel stack trace, baris log, atau URL yang gagal,
