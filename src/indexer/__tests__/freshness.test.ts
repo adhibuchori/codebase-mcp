@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createNodeFileSystem } from '../../adapters/fs/node-file-system.ts';
 import { commitAll, createWorkspace, git } from '../../testing/helpers/workspace.ts';
-import { gitDirOf, gitStateFingerprint } from '../freshness.ts';
+import { describeChange, gitDirOf, gitStateFingerprint } from '../freshness.ts';
 
 const fs = createNodeFileSystem();
 const cleanups: (() => void)[] = [];
@@ -24,8 +24,14 @@ test('the fingerprint changes with commits and staging, and is empty outside git
   const staged = await gitStateFingerprint(fs, root);
   expect(staged).not.toBe(before);
   commitAll(root, 'feat: add proto');
-  expect(await gitStateFingerprint(fs, root)).not.toBe(staged);
+  const committed = await gitStateFingerprint(fs, root);
+  expect(committed).not.toBe(staged);
   expect(await gitStateFingerprint(fs, workspace.dir)).toBe('');
+  expect(describeChange(before, staged)).toBe('git index');
+  expect(describeChange(staged, committed)).toContain('branch ref');
+  git(root, ['checkout', '-q', '-b', 'feature']);
+  expect(describeChange(committed, await gitStateFingerprint(fs, root))).toStartWith('HEAD');
+  expect(describeChange('a|1', 'a|1')).toBe('git state');
 });
 
 test('a .git file points at the real git directory, relative or absolute', async () => {

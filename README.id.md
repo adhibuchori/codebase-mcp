@@ -160,25 +160,42 @@ Ada dua file, keduanya lokal di mesin dan masuk gitignore:
   field, dan `codebase.config.schema.json` memberi autocomplete di editor Anda.
 - **`.env`**: hanya rahasia dan pengaturan mesin. Lihat [`.env.example`](.env.example).
 
-```jsonc
+```json
 {
   "$schema": "./codebase.config.schema.json",
-  // Semua repo git sampai 3 level di bawah ~/work. Folder pertama di bawahnya menjadi grup.
   "roots": [{ "path": "~/work", "maxDepth": 3, "exclude": ["archive/**"] }],
-  // Repo tunggal di lokasi lain.
   "repos": [{ "name": "legacy-billing", "path": "D:/code/legacy-billing", "group": "payments" }],
-  "exclude": ["**/*.min.js"], // tidak pernah dicari atau di-index (di atas .gitignore)
-  "blocked": ["\\.sql$"], // nama file tambahan yang tidak boleh dibaca
-  "logging": { "loggerNames": ["AuditLog"] }, // logger internal, agar triage_error mengenali pemanggilan log
+  "exclude": ["**/*.min.js"],
+  "blocked": ["\\.sql$"],
+  "logging": { "loggerNames": ["AuditLog"] },
   "limits": {
     "maxResponseTokens": 6000,
     "maxFileBytes": 1048576,
     "searchTimeoutMs": 20000,
-    "maxReadLines": 200,
+    "maxReadLines": 200
   },
-  "index": { "enabled": true, "dir": ".cache/index", "refreshSeconds": 30, "rescanMinutes": 10 },
+  "index": { "enabled": true, "dir": ".cache/index", "refreshSeconds": 30, "rescanMinutes": 10 }
 }
 ```
+
+File ini JSON biasa: server membacanya dengan `JSON.parse`, jadi komentar atau koma di akhir membuat
+server menolak start. Semua field opsional, tapi tanpa `roots` atau `repos` tidak ada yang
+dilayani.
+
+| Field                        | Arti                                                                                                                                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `roots`                      | Folder yang semua repo git di dalamnya dilayani, sampai `maxDepth` level ke bawah (default 3), dikurangi glob `exclude`. Folder pertama di bawah root menjadi grup, kecuali root itu mengisi `group`. |
+| `repos`                      | Repo tunggal di lokasi lain, masing-masing dengan `name`, `path`, dan `group` opsional.                                                                                                               |
+| `exclude`                    | Glob file yang tidak pernah dicari atau di-index, di atas `.gitignore`.                                                                                                                               |
+| `blocked`                    | Regex tambahan untuk nama file atau folder yang tidak boleh dibaca, di atas daftar rahasia bawaan.                                                                                                    |
+| `logging.loggerNames`        | Nama logger internal, agar `triage_error` mengenali pemanggilannya sebagai log.                                                                                                                       |
+| `limits.maxResponseTokens`   | Batas atas satu jawaban tool, dalam token (default 6000).                                                                                                                                             |
+| `limits.maxFileBytes`        | File yang lebih besar tetap terdaftar, tapi tidak pernah dibaca, dicari, atau di-index (default 1 MiB).                                                                                               |
+| `limits.searchTimeoutMs`     | Pencarian berhenti setelah selama ini dan mengembalikan apa yang sudah ditemukan (default 20000).                                                                                                     |
+| `limits.maxReadLines`        | Jumlah baris maksimum yang dikembalikan `read_code` dalam satu panggilan (default 200).                                                                                                               |
+| `index.enabled`, `index.dir` | Index di background (aktif secara default) dan lokasi shard-nya (default `.cache/index`).                                                                                                             |
+| `index.refreshSeconds`       | Seberapa sering `HEAD` dan git index setiap repo dicek perubahannya (default 30).                                                                                                                     |
+| `index.rescanMinutes`        | Seberapa sering semua file dicek ulang untuk edit yang belum terlihat oleh git (default 10).                                                                                                          |
 
 | Variabel `.env`                                                | Default                  | Arti                                                                                          |
 | -------------------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
@@ -188,7 +205,7 @@ Ada dua file, keduanya lokal di mesin dan masuk gitignore:
 | `REPOS`                                                        | tidak ada                | Format v1 `nama=path;nama=path`, hanya dipakai kalau file config tidak ada.                   |
 | `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                         |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                               |
-| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`.                                                        |
+| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                     |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | sesuai platform          | Pengaturan tunnel untuk `bun tunnel`.                                                         |
 | `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | tidak ada                | Hanya dipakai oleh `bun run check`.                                                           |
 
@@ -407,20 +424,94 @@ Melaporkan kerentanan: [SECURITY.md](SECURITY.md).
 | `Grammars: missing` di doctor                             | Jalankan `bun run grammars:sync`                                                                                                                                                         |
 | Windows: `'node' is not recognized` atau syntax error     | Instal Node.js 22.18 ke atas, atau Bun                                                                                                                                                   |
 
+### Membaca log
+
+Server menulis satu baris per kejadian ke terminal yang menjalankan `bun start`:
+`[waktu] LEVEL pesan key=value …`. Log hanya ada di mesin Anda dan tidak dikirim ke mana pun.
+`LOG_LEVEL` di `.env` mengatur seberapa banyak yang terlihat, dan berlaku setelah server di-restart:
+
+- `info` (default): setiap request, setiap panggilan tool (waktu, ukuran dalam token), dan setiap
+  index yang mengubah file.
+- `debug`: ditambah satu baris **search plan** per pencarian dan **alasan** setiap proses index,
+  termasuk yang tidak menemukan perubahan. Pakai saat menyelidiki pencarian yang lambat atau
+  hasilnya aneh, lalu kembalikan ke `info`.
+- `warn` atau `error`: hanya masalah, misalnya grammar yang gagal dimuat atau tool yang crash.
+
+Untuk sekali jalan saja, taruh di depan perintah: `LOG_LEVEL=debug bun start` di Mac, atau
+`$env:LOG_LEVEL='debug'; bun start` di PowerShell. Untuk melihat search plan saja, saring output-nya:
+`bun start 2>&1 | grep "search plan"` (PowerShell: `bun start 2>&1 | Select-String "search plan"`).
+Contoh ilustrasinya:
+
+```text
+[2026-10-14T09:12:03.120Z] INFO indexed repo=orders-java reason=startup files=10 changed=10 removed=0 ms=51
+[2026-10-14T09:15:33.004Z] DEBUG git state changed repo=orders-java changed="branch ref, git index"
+[2026-10-14T09:15:33.161Z] INFO indexed repo=orders-java reason="git: branch ref, git index" files=11 changed=2 removed=0 ms=14
+[2026-10-14T09:22:03.410Z] DEBUG index unchanged repo=payments-go reason=rescan files=5 changed=0 removed=0 ms=3
+[2026-10-14T09:23:41.877Z] DEBUG search plan pattern="Order already cancelled" mode=literal route="index: more than 3 repos" repos=6 indexRepos=1 candidateFiles=1 ruledOut=5 scannedRepos=0 engines=index filesSearched=1 matches=1 timedOut=false planMs=1 ms=9
+```
+
+**Search plan** menunjukkan bagaimana sebuah pencarian dijalankan dan ke mana waktunya habis:
+
+| Field                          | Arti                                                                                                                                                                                           |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `route`                        | Alasan index dipakai atau tidak: `index: more than 3 repos`, `index: ripgrep unavailable`, `scan: 3 repos or fewer` (di sini ripgrep sama cepatnya), atau `scan: no literal of 3+ characters`. |
+| `indexRepos`, `candidateFiles` | Repo yang dijawab lewat index, dan berapa file yang masih perlu dibaca di dalamnya.                                                                                                            |
+| `ruledOut`                     | Repo yang langsung disingkirkan index: tidak ada file di dalamnya yang mungkin cocok.                                                                                                          |
+| `scannedRepos`                 | Repo yang dibaca penuh: belum di-index, sedang di-index, atau kandidatnya lebih dari 5.000 file.                                                                                               |
+| `engines`                      | Yang membaca: `index`, `ripgrep`, atau `scan` (scanner JavaScript).                                                                                                                            |
+| `filesSearched`, `matches`     | File yang benar-benar dibaca, dan baris yang cocok.                                                                                                                                            |
+| `timedOut`                     | `true` kalau pencarian mencapai `limits.searchTimeoutMs` dan mengembalikan apa yang sudah ditemukan.                                                                                           |
+| `planMs`, `ms`                 | Waktu untuk bertanya ke index, dan waktu seluruh pencarian.                                                                                                                                    |
+
+Kalau pencarian lambat:
+
+- **`scannedRepos` tinggi padahal lewat index.** Repo itu belum di-index (`list_repos` menunjukkan
+  statusnya), atau teksnya terlalu umum. Query yang lebih spesifik mengatasi kasus kedua.
+- **`route="scan: no literal of 3+ characters"`.** Regex-nya tidak punya kata minimal tiga karakter
+  yang bisa dipakai index. Tambahkan satu, misalnya `findOrder\w+Id`, bukan `(get|find)\w+Id`.
+- **`timedOut=true`.** Persempit pencarian dengan `repos`, `group`, atau `path`.
+- **`engines=scan`.** ripgrep tidak bisa jalan di mesin ini. `bun run doctor` menjelaskan alasannya.
+
+**Baris index** menyebut alasannya:
+
+- `startup`: proses pertama setelah server start.
+- `rescan`: pengecekan berkala semua file, setiap `index.rescanMinutes`.
+- `git: <bagian>`: state git repo berubah. `HEAD` berarti checkout, `branch ref` commit atau pull,
+  `git index` staging atau checkout, dan `packed refs` fetch atau `git gc`.
+- `requested`: server memasukkannya ke antrean secara langsung.
+
+Proses dengan `changed=0` murah dan hanya dicatat di level `debug`. Kalau satu repo di-index ulang
+setiap 30 detik padahal tidak ada yang mengerjakannya, berarti ada tool yang menyentuh git index-nya;
+editor yang terus menjalankan `git status` bisa menyebabkannya.
+
 ## Pengembangan
 
 ```text
-src/
-  core/        logika murni: ranking, budget, perencanaan query, parsing stack dan log, pencocokan route, keamanan
-  ports/       interface yang dibutuhkan engine
-  adapters/    I/O: file system, ripgrep, index SQLite, tree-sitter, git, runtime (Bun atau Node)
-  languages/   satu folder per bahasa: ekstensi, grammar, pola simbol, route, parser stack
-  indexer/     indexer di background: inventory, shard per repo, worker thread, freshness
-  engine/      layanan aplikasi: query planner, simbol, katalog, stack trace, sumber log, endpoint
-  tools/       sembilan tool MCP: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
-  http/        middleware Hono dan transport MCP
-scripts/       setup, tunnel, doctor, check, eval, bench, grammar, quality gate
-tests/fixtures/repos/   enam mini service (Java, Go, Node, Python, .NET, proto) untuk test dan eval
+codebase-mcp/
+├── src/
+│   ├── index.ts         entry CLI: start (HTTP), stdio, index
+│   ├── app.ts           aplikasi Hono: urutan middleware, /health, /mcp
+│   ├── env.ts           satu-satunya pembaca environment variable
+│   ├── core/            logika murni: ranking, budget, perencanaan query, parsing stack dan log,
+│   │                    pencocokan route, keamanan
+│   ├── ports/           interface yang dibutuhkan engine
+│   ├── adapters/        I/O: file system, ripgrep, index SQLite, tree-sitter, git, runtime (Bun atau Node)
+│   ├── languages/       satu folder per bahasa: ekstensi, grammar, pola simbol, route, parser stack
+│   ├── config/          skema codebase.config.json, pemuatan config, discovery repo, registry repo
+│   ├── indexer/         indexer di background: inventory, shard per repo, worker thread, freshness
+│   ├── engine/          layanan aplikasi: query planner, simbol, katalog, stack trace, sumber log,
+│   │                    endpoint
+│   ├── tools/           sembilan tool MCP: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
+│   ├── http/            middleware Hono dan transport MCP
+│   ├── composition/     merangkai adapter menjadi runtime (composition root)
+│   ├── cli/             banner saat start
+│   └── testing/         helper test bersama: workspace sementara, runtime test lengkap
+├── assets/
+│   ├── grammars/        grammar WASM tree-sitter, versinya dipin
+│   └── queries/         query simbol per grammar
+├── scripts/             setup, tunnel, doctor, remote check, key, eval, bench, grammar, CI, quality gate
+└── tests/
+    └── fixtures/repos/  enam mini service (Java, Go, Node, Python, .NET, proto) untuk test dan eval
 ```
 
 Arsitektur, alur request, dan alasan di baliknya ada di

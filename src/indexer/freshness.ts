@@ -34,3 +34,14 @@ export async function gitStateFingerprint(fs: FileSystem, root: string): Promise
     ...stats.map((stat) => (stat ? `${stat.size}:${Math.trunc(stat.mtimeMs)}` : '-')),
   ].join('|');
 }
+
+/** What each part of a fingerprint stands for, in the order gitStateFingerprint writes them. */
+const PARTS = ['HEAD', 'HEAD', 'git index', 'packed refs', 'branch ref'];
+
+/** Names the parts of the git state that differ between two fingerprints, e.g. "branch ref, git index". */
+export function describeChange(before: string, after: string): string {
+  const old = before.split('|');
+  const now = after.split('|');
+  const names = PARTS.filter((_, at) => old[at] !== now[at]);
+  return [...new Set(names)].join(', ') || 'git state';
+}

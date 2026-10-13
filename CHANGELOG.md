@@ -7,6 +7,22 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-14
+
+### Fixed
+
+- `LOG_LEVEL=debug` now logs more than `info`. Every search writes one `search plan` line: the route
+  it took (index or direct scan) and why, the candidate files the index left, the repos it ruled out
+  or scanned in full, the engines used, and the time spent. Every index run names its reason
+  (`startup`, `rescan`, `git: <what changed>`, `requested`), and a run that found nothing to do is
+  logged at `debug` only. The `indexed` line at `info` now carries the reason too. Before this,
+  `debug` printed exactly what `info` did. The README explains how to read these lines.
+- The `codebase.config.json` example in the README is now valid JSON. It held comments and trailing
+  commas, which the server's `JSON.parse` refuses, so a copied example stopped the server at start.
+  A table below it now explains each field.
+- The README's source layout is a tree and lists every folder; `config/`, `composition/`, `cli/`,
+  `testing/`, `assets/` and the entry files were missing.
+
 ## [2.0.0] - 2026-10-14
 
 A rewrite for large multi-repo codebases: fast across hundreds of repos, small answers, and tools
@@ -95,6 +111,7 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/adhibuchori/codebase-mcp/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/adhibuchori/codebase-mcp/releases/tag/v1.0.0
