@@ -96,15 +96,55 @@ test('the coordinator tracks live state, failures and git changes', async () => 
   coordinator.stop();
 });
 
-test('quiet runs with nothing changed are not logged as indexed', async () => {
+test('every run names why it ran: startup, a git change and its parts, or the rescan', async () => {
   const lines: string[] = [];
+  const record =
+    (level: string) =>
+    (message: string, fields: object = {}) =>
+      void lines.push(`${level} ${message} ${JSON.stringify(fields)}`);
+  const fingerprint = { value: 'ref: refs/heads/main|1|2|3|4' };
+  const coordinator = createCoordinator({
+    repos: createRegistry(repos.slice(0, 1)),
+    runner: runner(async () => OUTCOME, []),
+    fingerprint: async () => fingerprint.value,
+    onIndexed: () => {},
+    clock: { now: () => 1 },
+    logger: { ...quiet, debug: record('debug'), info: record('info') },
+    concurrency: 1,
+    refreshMs: 60_000,
+    rescanMs: 60_000,
+  });
+  coordinator.start();
+  await coordinator.idle();
+  fingerprint.value = 'ref: refs/heads/main|1|9|3|4';
+  await coordinator.refresh();
+  await coordinator.idle();
+  coordinator.enqueue(repos[0] ?? { slug: '', root: '', group: '' });
+  await coordinator.idle();
+  coordinator.stop();
+  expect(lines).toEqual([
+    'debug index startup {"repos":1}',
+    'info indexed {"repo":"a","reason":"startup","files":2,"changed":1,"removed":0,"ms":5}',
+    'debug git state changed {"repo":"a","changed":"git index"}',
+    'info indexed {"repo":"a","reason":"git: git index","files":2,"changed":1,"removed":0,"ms":5}',
+    'info indexed {"repo":"a","reason":"requested","files":2,"changed":1,"removed":0,"ms":5}',
+  ]);
+});
+
+test('quiet runs with nothing changed are debug detail, not news', async () => {
+  const lines: string[] = [];
+  const details: string[] = [];
   const coordinator = createCoordinator({
     repos: createRegistry(repos.slice(0, 1)),
     runner: runner(async () => ({ ...OUTCOME, changed: 0 }), []),
     fingerprint: async () => '',
     onIndexed: () => {},
     clock: { now: () => 1 },
-    logger: { ...quiet, info: (message) => lines.push(message) },
+    logger: {
+      ...quiet,
+      info: (message) => lines.push(message),
+      debug: (message, fields) => details.push(`${message} ${String(fields?.['reason'])}`),
+    },
     concurrency: 2,
     refreshMs: 10,
     rescanMs: 15,
@@ -114,4 +154,7 @@ test('quiet runs with nothing changed are not logged as indexed', async () => {
   await coordinator.idle();
   coordinator.stop();
   expect(lines).toEqual([]);
+  expect(details).toContain('index unchanged startup');
+  expect(details).toContain('index rescan undefined');
+  expect(details).toContain('index unchanged rescan');
 });
