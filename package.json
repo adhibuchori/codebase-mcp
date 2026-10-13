@@ -1,0 +1,20 @@
+{
+  "name": "codebase-mcp",
+  "version": "1.0.0",
+  "description": "Read-only MCP server that lets ClickUp Brain read your local codebase (Mac/Windows)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "bun server.js",
+    "tunnel": "bun tunnel.js",
+    "check": "bun check.js",
+    "test": "bun test",
+    "gen-key": "bun -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  },
+  "engines": { "bun": ">=1.1", "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "express": "^5.1.0",
+    "zod": "^4.0.0"
+  }
+}

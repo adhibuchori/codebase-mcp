@@ -1,0 +1,9 @@
+# Secrets: API key, tunnel token, Cloudflare Access service token
+.env
+.env.*
+!.env.example
+
+node_modules/
+
+# OS files
+.DS_Store
