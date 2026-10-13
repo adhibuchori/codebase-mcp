@@ -155,25 +155,42 @@ Two files, both machine-local and gitignored:
   `codebase.config.schema.json` gives your editor completion.
 - **`.env`**: secrets and machine settings only. See [`.env.example`](.env.example).
 
-```jsonc
+```json
 {
   "$schema": "./codebase.config.schema.json",
-  // Every git repo up to 3 levels below ~/work. The first folder below it becomes the group.
   "roots": [{ "path": "~/work", "maxDepth": 3, "exclude": ["archive/**"] }],
-  // Single repos anywhere else.
   "repos": [{ "name": "legacy-billing", "path": "D:/code/legacy-billing", "group": "payments" }],
-  "exclude": ["**/*.min.js"], // never searched or indexed (on top of .gitignore)
-  "blocked": ["\\.sql$"], // extra file names that must never be read
-  "logging": { "loggerNames": ["AuditLog"] }, // in-house loggers, so triage_error knows a log call
+  "exclude": ["**/*.min.js"],
+  "blocked": ["\\.sql$"],
+  "logging": { "loggerNames": ["AuditLog"] },
   "limits": {
     "maxResponseTokens": 6000,
     "maxFileBytes": 1048576,
     "searchTimeoutMs": 20000,
-    "maxReadLines": 200,
+    "maxReadLines": 200
   },
-  "index": { "enabled": true, "dir": ".cache/index", "refreshSeconds": 30, "rescanMinutes": 10 },
+  "index": { "enabled": true, "dir": ".cache/index", "refreshSeconds": 30, "rescanMinutes": 10 }
 }
 ```
+
+The file is plain JSON: the server reads it with `JSON.parse`, so comments and trailing commas make
+it refuse to start. Every field is optional, but without `roots` or `repos` there is nothing to
+serve.
+
+| Field                        | Meaning                                                                                                                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `roots`                      | Folders whose git repos are all served, up to `maxDepth` levels down (default 3), minus `exclude` globs. The first folder below the root becomes the group, unless the root sets `group`. |
+| `repos`                      | Single repos anywhere else, each with a `name`, a `path` and an optional `group`.                                                                                                         |
+| `exclude`                    | Globs of files that are never searched or indexed, on top of `.gitignore`.                                                                                                                |
+| `blocked`                    | Extra regexes for file or folder names that must never be read, on top of the built-in secret list.                                                                                       |
+| `logging.loggerNames`        | In-house logger names, so `triage_error` recognises their calls as log statements.                                                                                                        |
+| `limits.maxResponseTokens`   | Upper bound for one tool answer, in tokens (default 6000).                                                                                                                                |
+| `limits.maxFileBytes`        | Larger files are listed but never read, searched or indexed (default 1 MiB).                                                                                                              |
+| `limits.searchTimeoutMs`     | A search stops after this long and returns what it found (default 20000).                                                                                                                 |
+| `limits.maxReadLines`        | Most lines `read_code` returns in one call (default 200).                                                                                                                                 |
+| `index.enabled`, `index.dir` | The background index (on by default) and where its shards live (default `.cache/index`).                                                                                                  |
+| `index.refreshSeconds`       | How often each repo's `HEAD` and git index are checked for changes (default 30).                                                                                                          |
+| `index.rescanMinutes`        | How often every file is re-checked for edits git has not seen yet (default 10).                                                                                                           |
 
 | `.env` variable                                                | Default                  | Meaning                                                                                           |
 | -------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
@@ -183,7 +200,7 @@ Two files, both machine-local and gitignored:
 | `REPOS`                                                        | none                     | v1 format `name=path;name=path`, used only when there is no config file.                          |
 | `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                            |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                   |
-| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`.                                                               |
+| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                    |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | per platform             | Tunnel settings for `bun tunnel`.                                                                 |
 | `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | none                     | Used by `bun run check` only.                                                                     |
 
@@ -399,20 +416,95 @@ Reporting a vulnerability: [SECURITY.md](SECURITY.md).
 | `Grammars: missing` in doctor                          | Run `bun run grammars:sync`                                                                                                                                      |
 | Windows: `'node' is not recognized` or a syntax error  | Install Node.js 22.18 or newer, or Bun                                                                                                                           |
 
+### Reading the logs
+
+The server writes one line per event to the terminal that runs `bun start`:
+`[time] LEVEL message key=value …`. Logs stay on your machine; nothing is sent anywhere.
+`LOG_LEVEL` in `.env` sets how much you see, and takes effect when the server restarts:
+
+- `info` (default): every request, every tool call (time, size in tokens), and every index run that
+  changed files.
+- `debug`: also one **search plan** line per search and the **reason** for every index run, including
+  runs that found nothing to do. Use it while you investigate a slow or surprising search, then go
+  back to `info`.
+- `warn` or `error`: problems only, such as a grammar that failed to load or a tool that crashed.
+
+For a single run, set it in front of the command: `LOG_LEVEL=debug bun start` on Mac, or
+`$env:LOG_LEVEL='debug'; bun start` in PowerShell. To see only the search plans, filter the output:
+`bun start 2>&1 | grep "search plan"` (PowerShell: `bun start 2>&1 | Select-String "search plan"`).
+An example, for illustration:
+
+```text
+[2026-10-14T09:12:03.120Z] INFO indexed repo=orders-java reason=startup files=10 changed=10 removed=0 ms=51
+[2026-10-14T09:15:33.004Z] DEBUG git state changed repo=orders-java changed="branch ref, git index"
+[2026-10-14T09:15:33.161Z] INFO indexed repo=orders-java reason="git: branch ref, git index" files=11 changed=2 removed=0 ms=14
+[2026-10-14T09:22:03.410Z] DEBUG index unchanged repo=payments-go reason=rescan files=5 changed=0 removed=0 ms=3
+[2026-10-14T09:23:41.877Z] DEBUG search plan pattern="Order already cancelled" mode=literal route="index: more than 3 repos" repos=6 indexRepos=1 candidateFiles=1 ruledOut=5 scannedRepos=0 engines=index filesSearched=1 matches=1 timedOut=false planMs=1 ms=9
+```
+
+**A search plan** says how a search ran and where its time went:
+
+| Field                          | Meaning                                                                                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `route`                        | Why the index was or was not used: `index: more than 3 repos`, `index: ripgrep unavailable`, `scan: 3 repos or fewer` (ripgrep is as fast there), or `scan: no literal of 3+ characters`. |
+| `indexRepos`, `candidateFiles` | Repos answered through the index, and how many files the index left to read in them.                                                                                                      |
+| `ruledOut`                     | Repos the index excluded outright: no file in them can match.                                                                                                                             |
+| `scannedRepos`                 | Repos read in full: not indexed yet, still indexing, or more than 5,000 candidate files.                                                                                                  |
+| `engines`                      | What did the reading: `index`, `ripgrep`, or `scan` (the JavaScript scanner).                                                                                                             |
+| `filesSearched`, `matches`     | Files actually read, and lines that matched.                                                                                                                                              |
+| `timedOut`                     | `true` when the search hit `limits.searchTimeoutMs` and returned what it had.                                                                                                             |
+| `planMs`, `ms`                 | Time spent asking the index, and the whole search.                                                                                                                                        |
+
+When a search is slow:
+
+- **A high `scannedRepos` on the index route.** Those repos are not indexed yet (`list_repos` shows
+  their state), or the text is too common. A more specific query fixes the second case.
+- **`route="scan: no literal of 3+ characters"`.** The regex has no word of three or more characters
+  the index can use. Add one, for example `findOrder\w+Id` instead of `(get|find)\w+Id`.
+- **`timedOut=true`.** Narrow the search with `repos`, `group` or `path`.
+- **`engines=scan`.** ripgrep cannot run on this machine. `bun run doctor` says why.
+
+**An index line** names its reason:
+
+- `startup`: the first run after the server started.
+- `rescan`: the periodic check of every file, every `index.rescanMinutes`.
+- `git: <parts>`: the repo's git state changed. `HEAD` means a checkout, `branch ref` a commit or a
+  pull, `git index` staging or a checkout, and `packed refs` a fetch or `git gc`.
+- `requested`: the server queued it directly.
+
+A run with `changed=0` costs little and is logged at `debug` only. If one repo is re-indexed every
+30 seconds although nobody works in it, a tool is touching its git index; an editor that keeps
+running `git status` can do this.
+
 ## Development
 
 ```text
-src/
-  core/        pure logic: ranking, budgets, query planning, stack and log parsing, route matching, security
-  ports/       interfaces the engine depends on
-  adapters/    I/O: file system, ripgrep, SQLite index, tree-sitter, git, runtime (Bun or Node)
-  languages/   one folder per language: extensions, grammar, symbol patterns, routes, stack parser
-  indexer/     the background indexer: inventory, per-repo shards, worker threads, freshness
-  engine/      application services: search planner, symbols, catalog, stack traces, log sources, endpoints
-  tools/       the nine MCP tools: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
-  http/        Hono middlewares and the MCP transport
-scripts/       setup, tunnel, doctor, check, eval, bench, grammars, quality gates
-tests/fixtures/repos/   six mini services (Java, Go, Node, Python, .NET, proto) used by tests and the eval
+codebase-mcp/
+├── src/
+│   ├── index.ts         CLI entry: start (HTTP), stdio, index
+│   ├── app.ts           the Hono app: middleware order, /health, /mcp
+│   ├── env.ts           the only reader of environment variables
+│   ├── core/            pure logic: ranking, budgets, query planning, stack and log parsing,
+│   │                    route matching, security
+│   ├── ports/           interfaces the engine depends on
+│   ├── adapters/        I/O: file system, ripgrep, SQLite index, tree-sitter, git, runtime (Bun or Node)
+│   ├── languages/       one folder per language: extensions, grammar, symbol patterns, routes,
+│   │                    stack parser
+│   ├── config/          codebase.config.json schema, loading, repo discovery, the repo registry
+│   ├── indexer/         the background indexer: inventory, per-repo shards, worker threads, freshness
+│   ├── engine/          application services: search planner, symbols, catalog, stack traces,
+│   │                    log sources, endpoints
+│   ├── tools/           the nine MCP tools: <name>.tool.ts → <domain>.service.ts → <domain>.format.ts
+│   ├── http/            Hono middlewares and the MCP transport
+│   ├── composition/     wires adapters into the runtime (the composition root)
+│   ├── cli/             the start banner
+│   └── testing/         shared test helpers: temporary workspaces, a full test runtime
+├── assets/
+│   ├── grammars/        tree-sitter WASM grammars, pinned
+│   └── queries/         symbol queries per grammar
+├── scripts/             setup, tunnel, doctor, remote check, keys, eval, bench, grammars, CI, quality gates
+└── tests/
+    └── fixtures/repos/  six mini services (Java, Go, Node, Python, .NET, proto) for tests and the eval
 ```
 
 The architecture, the request flow and the reasons behind them are in
