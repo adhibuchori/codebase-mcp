@@ -33,7 +33,15 @@ async function bunEngine(): Promise<OpenSqlite> {
       all: (sql, params = []) => statement(sql).all(...params),
       get: (sql, params = []) => statement(sql).get(...params) ?? undefined,
       run: (sql, params = []) => void statement(sql).run(...params),
-      close: () => db.close(),
+      close: () => {
+        /*
+         * bun:sqlite closes with sqlite3_close_v2: while a prepared statement lives, the connection
+         * stays open as a zombie and keeps the file. Windows then refuses to delete or replace it.
+         */
+        for (const prepared of cache.values()) prepared.finalize();
+        cache.clear();
+        db.close();
+      },
     };
   };
 }
@@ -55,6 +63,7 @@ async function nodeEngine(): Promise<OpenSqlite> {
       all: (sql, params = []) => statement(sql).all(...params),
       get: (sql, params = []) => statement(sql).get(...params),
       run: (sql, params = []) => void statement(sql).run(...params),
+      /* node:sqlite finalizes every statement of the connection when it closes. */
       close: () => db.close(),
     };
   };

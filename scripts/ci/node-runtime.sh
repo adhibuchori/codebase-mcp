@@ -41,7 +41,13 @@ node_ts src/index.ts index
 # Started directly, not through node_ts, so $! is the server itself and the trap stops it.
 node --disable-warning=ExperimentalWarning src/index.ts start >server.log 2>&1 &
 server=$!
-trap 'kill "$server" 2>/dev/null || true; rm -rf "$work"' EXIT
+# Stop the server and wait until it has exited: Windows keeps its index files locked until then.
+stop() {
+  kill "$server" 2>/dev/null || true
+  wait "$server" 2>/dev/null || true
+  rm -rf "$work" || true
+}
+trap stop EXIT
 for _ in $(seq 1 60); do
   curl -sf http://127.0.0.1:8787/health >/dev/null && break
   sleep 1

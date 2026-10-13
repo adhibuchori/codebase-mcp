@@ -12,6 +12,7 @@
 | `404` for `/` right after connecting a client                                    | clickup-url-needs-mcp-path.md               |
 | Touching scripts/tunnel/ or starting any program with secrets in the environment | cloudflared-logs-env-tokens.md              |
 | Writing an FTS5 `MATCH` query in src/adapters/index/                             | fts5-detail-none-rejects-phrases.md         |
+| Opening, caching or closing SQLite connections; `EBUSY` on a shard on Windows    | bun-sqlite-close-keeps-zombie.md            |
 | Writing a `bun test` file that needs a module replaced                           | bun-mock-module-is-process-wide.md          |
 | Touching src/http/middlewares/rate-limit.middleware.ts                           | rate-limit-double-next.md                   |
 | Writing or editing any check under scripts/check/                                | a-check-that-matches-nothing-passes.md      |
