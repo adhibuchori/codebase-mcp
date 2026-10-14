@@ -158,6 +158,16 @@ Anda perlu menempelkannya ke ClickUp. Untuk menjalankan setup tanpa pertanyaan:
 bun run setup --root ~/work --root D:/code --yes
 ```
 
+**Lebih suka daftar repo yang tetap?** Tulis di `REPOS` dalam `.env`, dengan format
+`nama=path;nama=path`. Selama `REPOS` diisi, `REPOS` yang menentukan repo mana yang dilayani, dan
+`roots` serta `repos` di `codebase.config.json` dilewati. `setup` lalu menampilkan daftarnya dan
+menambahkan repo yang Anda sebut, bukan menanyakan folder. Setiap repo harus berupa repository git,
+dan folder yang sudah tercantum tidak ditambahkan dua kali. Restart `bun start` setelah mengubahnya.
+
+```bash
+bun run setup --repo ~/work/orders-api --repo web=D:/code/web-app
+```
+
 ### 3. Jalankan
 
 ```bash
@@ -188,10 +198,11 @@ Keduanya menjalankan setup lebih dulu kalau konfigurasi belum ada.
 
 Ada dua file, keduanya lokal di mesin dan masuk gitignore:
 
-- **`codebase.config.json`**: repo mana yang dilayani, plus batas-batasnya. `bun run setup` yang
-  menulisnya. [`codebase.config.example.json`](codebase.config.example.json) menunjukkan semua
+- **`codebase.config.json`**: repo mana yang dilayani (kecuali `REPOS` di `.env` diisi), plus
+  batas-batasnya. `bun run setup` yang menulisnya. [`codebase.config.example.json`](codebase.config.example.json) menunjukkan semua
   field, dan `codebase.config.schema.json` memberi autocomplete di editor Anda.
-- **`.env`**: hanya rahasia dan pengaturan mesin. Lihat [`.env.example`](.env.example).
+- **`.env`**: rahasia, pengaturan mesin, dan `REPOS` kalau Anda mendaftar repo di sana. Lihat
+  [`.env.example`](.env.example).
 
 ```json
 {
@@ -434,7 +445,7 @@ Melaporkan kerentanan: [SECURITY.md](SECURITY.md).
 
 | Perintah                                     | Fungsi                                                                            |
 | -------------------------------------------- | --------------------------------------------------------------------------------- |
-| `bun run setup`                              | Setup pertama: cari repo, tulis `codebase.config.json`, buat API key              |
+| `bun run setup`                              | Buat API key, lalu tambah repo ke `REPOS`, atau cari repo di bawah sebuah folder  |
 | `bun start`                                  | Jalankan server HTTP dan indexer di background                                    |
 | `bun tunnel`                                 | Buka tunnel (Cloudflare di Mac, Pinggy di Windows)                                |
 | `bun run check [url]`                        | Panggil URL publik seperti yang akan dilakukan ClickUp                            |

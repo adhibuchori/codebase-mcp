@@ -7,6 +7,21 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-14
+
+### Added
+
+- `bun run setup --repo <folder>` (repeatable, also `name=folder`) adds repos to `REPOS` in `.env`.
+  It changes only that line, checks that each folder is a git repository, skips a folder that is
+  already listed, and gives a taken name a numbered suffix.
+
+### Changed
+
+- `bun run setup` follows `REPOS`. When `REPOS` is set in `.env`, setup no longer asks for a folder
+  or writes `codebase.config.json`. It shows the repos `REPOS` serves and offers to add more, so
+  `.env` stays the one place that lists them. Without `REPOS` it finds repos under a folder, as
+  before. The API key is now checked first, in both cases.
+
 ## [2.0.3] - 2026-10-14
 
 ### Fixed
@@ -140,7 +155,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...v2.1.0
 [2.0.3]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.0...v2.0.1
