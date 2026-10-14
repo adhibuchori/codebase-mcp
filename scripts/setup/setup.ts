@@ -40,6 +40,16 @@ async function ask(question: string, fallback: string): Promise<string> {
   return answer || fallback;
 }
 
+/** The question, one example per format, and the answer on a line of its own after "> ". */
+const ADD_REPOS_QUESTION = [
+  '',
+  'Add repos? Type one or more, or press Enter to skip. Examples:',
+  '  ~/work/orders-api                   a folder; it is named after the folder (orders-api)',
+  '  web=~/work/web-app                  a name of your own, then = and the folder',
+  '  ~/work/orders-api;~/work/payments   several at once, separated by ;',
+  '>',
+].join('\n');
+
 /** REPOS mode: list what REPOS serves, then add the git repos the user names. */
 async function updateRepos(listed: readonly { name: string; path: string }[]): Promise<void> {
   console.log(
@@ -48,13 +58,7 @@ async function updateRepos(listed: readonly { name: string; path: string }[]): P
       : 'REPOS in .env is not set yet; from now on it lists the repos that are served.',
   );
   for (const repo of listed) console.log(`  • ${repo.name} = ${repo.path}`);
-  const input =
-    repoArgs.length > 0
-      ? repoArgs.join(';')
-      : await ask(
-          '\nAdd repos? (a folder, or name=folder; several: separate with ";"; Enter to skip)',
-          '',
-        );
+  const input = repoArgs.length > 0 ? repoArgs.join(';') : await ask(ADD_REPOS_QUESTION, '');
   const repos = [];
   for (const { name, path } of parseRepoInput(input)) {
     const folder = resolve(expandHome(path, homedir()));
