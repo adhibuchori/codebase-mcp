@@ -22,14 +22,17 @@ test('debug level shows everything; empty fields add nothing', () => {
   expect(lines[0]).toMatch(/DEBUG visible$/);
 });
 
-test('the default sink is stderr', () => {
-  const stderr = spyOn(console, 'error').mockImplementation(() => {});
+test('the default sink is the stderr stream itself, one line per write, never console.error', () => {
+  const stderr = spyOn(process.stderr, 'write').mockImplementation(() => true);
+  const consoleError = spyOn(console, 'error');
   const logger = createConsoleLogger('warn');
   logger.info('quiet');
   logger.warn('loud');
   expect(stderr).toHaveBeenCalledTimes(1);
-  expect(String(stderr.mock.calls[0]?.[0])).toContain('WARN loud');
+  expect(String(stderr.mock.calls[0]?.[0])).toMatch(/WARN loud\n$/);
+  expect(consoleError).not.toHaveBeenCalled();
   stderr.mockRestore();
+  consoleError.mockRestore();
 });
 
 test('isLogLevel', () => {
