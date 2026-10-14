@@ -7,6 +7,14 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-10-14
+
+### Changed
+
+- `bun run setup` asks for repos to add on lines of their own: one example per format (a folder, a
+  name of your own with `name=folder`, several separated by `;`), then the answer after `> ` on a
+  new line. It used to be a single line that packed every format into parentheses.
+
 ## [2.1.0] - 2026-10-14
 
 ### Added
@@ -155,7 +163,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...v2.1.0
 [2.0.3]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...v2.0.2
