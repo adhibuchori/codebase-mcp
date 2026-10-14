@@ -6,6 +6,7 @@
  * Reads PUBLIC_URL, MCP_API_KEY, CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET from .env.
  */
 import { loadEnvFile } from '../shared/env-file.ts';
+import { explainStatus } from './explain-status.ts';
 
 loadEnvFile();
 
@@ -79,6 +80,17 @@ try {
   }
   const health = await request('/health', access);
   report(health.ok, `Server reachable through the tunnel (HTTP ${health.status})`);
+  if (!health.ok) {
+    const hint = explainStatus({
+      status: health.status,
+      fromAccess: health.headers.has('cf-access-domain'),
+      location: health.headers.get('location'),
+    });
+    for (const line of hint) console.log(`   ${line}`);
+    console.log('   The MCP checks are skipped until the server is reachable.');
+    console.log('\nSome checks failed.');
+    process.exit(1);
+  }
   const init = await request('/mcp', bearer, {
     jsonrpc: '2.0',
     id: 0,

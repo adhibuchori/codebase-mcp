@@ -1,6 +1,8 @@
 /**
  * Logger port on stderr: one line per event, "[time] LEVEL message key=value". stderr keeps stdout
- * free for the MCP stdio transport, and the terminal of `bun start` shows both.
+ * free for the MCP stdio transport, and the terminal of `bun start` shows both. It writes to the
+ * stream directly: Bun paints everything passed to console.error red, which made every INFO line
+ * look like an error.
  */
 import type { LogFields, Logger } from '../../ports/runtime.ts';
 
@@ -23,7 +25,7 @@ function render(fields: LogFields | undefined): string {
 
 export function createConsoleLogger(
   level: LogLevel,
-  write: (line: string) => void = (line) => console.error(line),
+  write: (line: string) => void = (line) => process.stderr.write(`${line}\n`),
 ): Logger {
   const emit = (at: LogLevel, message: string, fields?: LogFields): void => {
     if (ORDER[at] < ORDER[level]) return;

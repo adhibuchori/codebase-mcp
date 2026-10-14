@@ -7,6 +7,25 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-10-14
+
+### Fixed
+
+- `REPOS` is added to the repos of `codebase.config.json` instead of being ignored once that file
+  exists. Editing `REPOS` and restarting `bun start` now always changes what is served. A folder
+  that a root also finds is served once, under its `REPOS` name. The start banner names both
+  sources.
+- Log lines are no longer red in the terminal. The logger wrote through `console.error`, which Bun
+  paints red, so every `INFO` line looked like an error. It now writes to stderr directly.
+- `bun run check` says why the server cannot be reached and stops there, instead of failing every
+  MCP check with the same status:
+  - a 403 from Cloudflare Access means the service token was refused;
+  - a redirect to the Access login means no policy with the action "Service Auth" includes it;
+  - 530 means the named tunnel is not connected, usually because `CF_TUNNEL_TOKEN` is missing and
+    `bun tunnel` opened a temporary quick tunnel instead;
+  - 502 means `bun start` is not running.
+- `codebase.config.json.bak`, the copy `bun run setup` keeps, is gitignored like the config.
+
 ## [2.0.1] - 2026-10-14
 
 ### Fixed
@@ -111,7 +130,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/adhibuchori/codebase-mcp/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/adhibuchori/codebase-mcp/releases/tag/v1.0.0

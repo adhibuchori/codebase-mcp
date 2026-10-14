@@ -40,6 +40,25 @@ describe('createRuntime', () => {
     await runtime.close();
   });
 
+  test('REPOS adds its repos; a repo the roots also find is served once, under its REPOS name', async () => {
+    const extra = createWorkspace({ repos: ['orders-java'] });
+    const runtime = await createRuntime(
+      testOptions(writeConfig(workspace), {
+        reposEnv: `orders=${extra.repoPath('orders-java')};again=${workspace.repoPath('payments-go')}`,
+        writeLog: () => {},
+      }),
+    );
+    expect(runtime.configSource).toEndWith(' + REPOS in .env');
+    expect(
+      runtime.context.deps.repos
+        .list()
+        .map((repo) => repo.slug)
+        .toSorted(),
+    ).toEqual(['again', 'contracts-proto', 'orders']);
+    await runtime.close();
+    extra.cleanup();
+  });
+
   test('ripgrep can be switched off, leaving the JavaScript scanner', async () => {
     const runtime = await createRuntime(
       testOptions(writeConfig(workspace), { disableRipgrep: true, writeLog: () => {} }),

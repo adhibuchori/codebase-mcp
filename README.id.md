@@ -235,7 +235,7 @@ dilayani.
 | `MCP_API_KEY`                                                  | tidak ada                | Wajib, minimal 24 karakter. `bun run setup` membuatnya; `bun run gen-key` mencetak yang baru. |
 | `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Tempat server mendengarkan. Tunnel adalah satu-satunya jalan masuk.                           |
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | File config lain.                                                                             |
-| `REPOS`                                                        | tidak ada                | Format v1 `nama=path;nama=path`, hanya dipakai kalau file config tidak ada.                   |
+| `REPOS`                                                        | tidak ada                | Repo tambahan `nama=path;nama=path`, digabung dengan repo di config. Restart `bun start`.     |
 | `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                         |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                               |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                     |

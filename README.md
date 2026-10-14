@@ -229,7 +229,7 @@ serve.
 | `MCP_API_KEY`                                                  | none                     | Required, at least 24 characters. `bun run setup` creates it; `bun run gen-key` prints a new one. |
 | `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Where the server listens. The tunnel is the only way in.                                          |
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | Another config file.                                                                              |
-| `REPOS`                                                        | none                     | v1 format `name=path;name=path`, used only when there is no config file.                          |
+| `REPOS`                                                        | none                     | Extra repos as `name=path;name=path`, added to the config's. Restart `bun start` after a change.  |
 | `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                            |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                   |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                    |

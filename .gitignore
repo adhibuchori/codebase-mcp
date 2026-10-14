@@ -5,6 +5,7 @@
 
 # Machine-local configuration: which folders hold your repos
 codebase.config.json
+codebase.config.json.bak
 
 # Dependencies, caches and generated reports
 node_modules/
