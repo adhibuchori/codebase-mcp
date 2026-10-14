@@ -28,3 +28,9 @@ test('a 403 that Access did not send, or any other status, adds nothing', () => 
   expect(failed(404)).toBe('');
   expect(failed(302, false, 'https://example.com/elsewhere')).toBe('');
 });
+
+test('only the Access host counts as its login page, not the name anywhere in the URL', () => {
+  expect(failed(302, false, 'https://example.com/?next=team.cloudflareaccess.com')).toBe('');
+  expect(failed(302, false, 'https://cloudflareaccess.com.example.com/login')).toBe('');
+  expect(failed(302, false, '/relative/path')).toBe('');
+});

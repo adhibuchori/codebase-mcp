@@ -11,6 +11,12 @@ export interface FailedResponse {
   readonly location: string | null;
 }
 
+/** A redirect to the team's Access login page, judged by the host only, never a substring. */
+function isAccessLogin(location: string | null): boolean {
+  const host = location ? URL.parse(location)?.hostname : undefined;
+  return host?.endsWith('.cloudflareaccess.com') ?? false;
+}
+
 export function explainStatus(response: FailedResponse): string[] {
   if (response.fromAccess && response.status === 403)
     return [
@@ -19,7 +25,7 @@ export function explainStatus(response: FailedResponse): string[] {
       'Service credentials (a refreshed token has a new secret), and check that the application has a',
       'policy with the action "Service Auth" that includes this token.',
     ];
-  if (response.location?.includes('cloudflareaccess.com'))
+  if (isAccessLogin(response.location))
     return [
       'Cloudflare Access sent the request to its login page: no policy lets this service token in.',
       'Give the application a policy with the action "Service Auth" (not "Allow") that includes it.',
