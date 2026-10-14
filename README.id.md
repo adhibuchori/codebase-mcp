@@ -230,17 +230,17 @@ dilayani.
 | `index.refreshSeconds`       | Seberapa sering `HEAD` dan git index setiap repo dicek perubahannya (default 30).                                                                                                                     |
 | `index.rescanMinutes`        | Seberapa sering semua file dicek ulang untuk edit yang belum terlihat oleh git (default 10).                                                                                                          |
 
-| Variabel `.env`                                                | Default                  | Arti                                                                                          |
-| -------------------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
-| `MCP_API_KEY`                                                  | tidak ada                | Wajib, minimal 24 karakter. `bun run setup` membuatnya; `bun run gen-key` mencetak yang baru. |
-| `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Tempat server mendengarkan. Tunnel adalah satu-satunya jalan masuk.                           |
-| `CODEBASE_CONFIG`                                              | `./codebase.config.json` | File config lain.                                                                             |
-| `REPOS`                                                        | tidak ada                | Repo tambahan `nama=path;nama=path`, digabung dengan repo di config. Restart `bun start`.     |
-| `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                         |
-| `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                               |
-| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                     |
-| `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | sesuai platform          | Pengaturan tunnel untuk `bun tunnel`.                                                         |
-| `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | tidak ada                | Hanya dipakai oleh `bun run check`.                                                           |
+| Variabel `.env`                                                | Default                  | Arti                                                                                                                                            |
+| -------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_API_KEY`                                                  | tidak ada                | Wajib, minimal 24 karakter. `bun run setup` membuatnya; `bun run gen-key` mencetak yang baru.                                                   |
+| `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Tempat server mendengarkan. Tunnel adalah satu-satunya jalan masuk.                                                                             |
+| `CODEBASE_CONFIG`                                              | `./codebase.config.json` | File config lain.                                                                                                                               |
+| `REPOS`                                                        | tidak ada                | `nama=path;nama=path`. Kalau diisi, hanya repo ini yang dilayani (`roots`/`repos` di config dilewati). Restart `bun start` setelah mengubahnya. |
+| `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                                                                           |
+| `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                                                                                 |
+| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                                                                       |
+| `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | sesuai platform          | Pengaturan tunnel untuk `bun tunnel`.                                                                                                           |
+| `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | tidak ada                | Hanya dipakai oleh `bun run check`.                                                                                                             |
 
 **Index** disimpan di `.cache/index/`, satu file SQLite per repo, ukurannya sekitar seperlima dari
 source. Folder ini boleh dihapus kapan saja dan akan dibangun ulang. Setiap 30 detik server

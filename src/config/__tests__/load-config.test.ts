@@ -39,23 +39,25 @@ describe('loadConfig', () => {
     expect(loaded.config.blocked).toEqual(['\\.sql$', '\\.bak$']);
   });
 
-  test('REPOS from .env adds its repos to the config file, which keeps its roots', async () => {
+  test('REPOS from .env replaces the roots and repos of the config file, which keeps its settings', async () => {
     const path = join(tempDir(), 'codebase.config.json');
     writeFileSync(
       path,
-      JSON.stringify({ roots: [{ path: '~/work' }], repos: [{ name: 'core', path: '/tmp/core' }] }),
+      JSON.stringify({
+        roots: [{ path: '~/work' }],
+        repos: [{ name: 'core', path: '/tmp/core' }],
+        limits: { maxResponseTokens: 9000 },
+      }),
     );
     const loaded = await loadConfig(fs, {
       path,
       reposEnv: 'web=/tmp/web',
       extraBlockedEnv: '',
     });
-    expect(loaded.source).toBe(`${path} + REPOS in .env`);
-    expect(loaded.config.roots).toHaveLength(1);
-    expect(loaded.config.repos).toEqual([
-      { name: 'core', path: '/tmp/core', group: '' },
-      { name: 'web', path: '/tmp/web', group: '' },
-    ]);
+    expect(loaded.source).toBe(`REPOS in .env (settings from ${path})`);
+    expect(loaded.config.roots).toEqual([]);
+    expect(loaded.config.repos).toEqual([{ name: 'web', path: '/tmp/web', group: '' }]);
+    expect(loaded.config.limits.maxResponseTokens).toBe(9000);
   });
 
   test('falls back to REPOS from .env when there is no config file', async () => {
