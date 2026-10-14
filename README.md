@@ -152,6 +152,16 @@ paste it into ClickUp. To run setup without prompts:
 bun run setup --root ~/work --root D:/code --yes
 ```
 
+**Prefer a fixed list of repos?** Put it in `REPOS` in `.env`, as `name=path;name=path`. While
+`REPOS` is set, it decides exactly which repos are served, and the `roots` and `repos` of
+`codebase.config.json` are skipped. `setup` then shows the list and adds the repos you name to it,
+instead of asking for a folder. Each one must be a git repository, and a folder already listed is
+not added twice. Restart `bun start` after a change.
+
+```bash
+bun run setup --repo ~/work/orders-api --repo web=D:/code/web-app
+```
+
 ### 3. Run
 
 ```bash
@@ -182,10 +192,12 @@ setup first when there is no configuration yet.
 
 Two files, both machine-local and gitignored:
 
-- **`codebase.config.json`**: which repos to serve, plus limits. `bun run setup` writes it.
+- **`codebase.config.json`**: which repos to serve (unless `REPOS` in `.env` is set), plus
+  limits. `bun run setup` writes it.
   [`codebase.config.example.json`](codebase.config.example.json) shows every field, and
   `codebase.config.schema.json` gives your editor completion.
-- **`.env`**: secrets and machine settings only. See [`.env.example`](.env.example).
+- **`.env`**: secrets, machine settings, and `REPOS` when you list your repos there. See
+  [`.env.example`](.env.example).
 
 ```json
 {
@@ -425,7 +437,7 @@ Reporting a vulnerability: [SECURITY.md](SECURITY.md).
 
 | Command                                      | What it does                                                                         |
 | -------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `bun run setup`                              | First-time setup: find repos, write `codebase.config.json`, create the API key       |
+| `bun run setup`                              | Create the API key, then add repos to `REPOS`, or find repos under a folder          |
 | `bun start`                                  | Start the HTTP server and the background indexer                                     |
 | `bun tunnel`                                 | Open the tunnel (Cloudflare on Mac, Pinggy on Windows)                               |
 | `bun run check [url]`                        | Call the public URL the way ClickUp will                                             |
