@@ -1,7 +1,8 @@
 /**
- * Loads the configuration: codebase.config.json when it exists, plus the repos of the REPOS variable
- * from .env (name=path;name=path). REPOS alone is enough, so a v1 setup keeps working without
- * changes, and editing REPOS then restarting the server always takes effect.
+ * Loads the configuration from codebase.config.json and the REPOS variable from .env
+ * (name=path;name=path). When REPOS is set, it decides which repos are served, replacing the file's
+ * roots and repos, so editing REPOS and restarting always serves exactly that list. The file still
+ * supplies every other setting; without REPOS, the file decides alone.
  */
 import { z } from 'zod';
 import type { FileSystem } from '../ports/file-system.ts';
@@ -67,12 +68,9 @@ function withExtraBlocked(config: AppConfig, extra: string): AppConfig {
   return patterns.length === 0 ? config : { ...config, blocked: [...config.blocked, ...patterns] };
 }
 
-/**
- * The file's repos, then REPOS, then what the roots find. A folder listed twice is served once,
- * under the first name it was given (repo registry), so a name written by hand wins.
- */
-function withReposEnv(config: AppConfig, repos: readonly RepoConfig[]): AppConfig {
-  return repos.length === 0 ? config : { ...config, repos: [...config.repos, ...repos] };
+/** REPOS, when set, is the whole list: the file's roots and repos step aside, its settings stay. */
+function withReposEnv(config: AppConfig, repos: RepoConfig[]): AppConfig {
+  return repos.length === 0 ? config : { ...config, roots: [], repos };
 }
 
 export async function loadConfig(fs: FileSystem, input: ConfigInput): Promise<LoadedConfig> {
@@ -82,7 +80,7 @@ export async function loadConfig(fs: FileSystem, input: ConfigInput): Promise<Lo
     const config = validate(parseJson(await fs.readText(input.path), input.path), input.path);
     return {
       config: withExtraBlocked(withReposEnv(config, repos), input.extraBlockedEnv),
-      source: repos.length > 0 ? `${input.path} + ${REPOS_SOURCE}` : input.path,
+      source: repos.length > 0 ? `${REPOS_SOURCE} (settings from ${input.path})` : input.path,
     };
   }
   if (repos.length > 0) {

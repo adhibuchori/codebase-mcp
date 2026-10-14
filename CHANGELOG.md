@@ -7,6 +7,16 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-10-14
+
+### Fixed
+
+- `REPOS` in `.env`, when set, now decides exactly which repos are served. The roots and repos of
+  `codebase.config.json` are skipped; its other settings (limits, index, blocked) still apply. In
+  2.0.2 `REPOS` was added to the config's repos, so a root left from setup kept serving repos that
+  were not in `REPOS`. The start banner and `doctor` say `REPOS in .env (settings from …)`.
+- `bun run setup` warns when `REPOS` is set, since the folders it writes are then skipped.
+
 ## [2.0.2] - 2026-10-14
 
 ### Fixed
@@ -130,7 +140,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/adhibuchori/codebase-mcp/compare/v1.0.0...v2.0.0

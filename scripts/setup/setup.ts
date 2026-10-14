@@ -11,9 +11,11 @@ import readline from 'node:readline/promises';
 import { createNodeFileSystem } from '../../src/adapters/fs/node-file-system.ts';
 import { discoverRepos } from '../../src/config/discover-repos.ts';
 import { expandHome } from '../../src/config/repo-registry.ts';
-import { PROJECT_DIR } from '../shared/env-file.ts';
+import { parseReposEnv } from '../../src/config/load-config.ts';
+import { loadEnvFile, PROJECT_DIR } from '../shared/env-file.ts';
 import { ensureApiKey } from './api-key.ts';
 
+loadEnvFile();
 const args = process.argv.slice(2);
 const yes = args.includes('--yes');
 const roots = args.flatMap((arg, index) =>
@@ -66,6 +68,10 @@ async function main(): Promise<void> {
     `${JSON.stringify({ $schema: './codebase.config.schema.json', roots: chosen.map((path) => ({ path, maxDepth: 3 })) }, null, 2)}\n`,
   );
   console.log(`\n✅ Wrote ${configPath}`);
+  if (parseReposEnv(process.env['REPOS'] ?? '').length > 0)
+    console.log(
+      '⚠️  REPOS is set in .env, so it decides which repos are served and these folders are skipped. Remove REPOS to use them.',
+    );
   const keyNote = ensureApiKey(join(PROJECT_DIR, '.env'), join(PROJECT_DIR, '.env.example'), {
     read: (path) => readFileSync(path, 'utf8'),
     write: writeFileSync,

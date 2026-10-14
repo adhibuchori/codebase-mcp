@@ -40,21 +40,21 @@ describe('createRuntime', () => {
     await runtime.close();
   });
 
-  test('REPOS adds its repos; a repo the roots also find is served once, under its REPOS name', async () => {
+  test('REPOS decides which repos are served; the config roots find nothing extra', async () => {
     const extra = createWorkspace({ repos: ['orders-java'] });
     const runtime = await createRuntime(
       testOptions(writeConfig(workspace), {
-        reposEnv: `orders=${extra.repoPath('orders-java')};again=${workspace.repoPath('payments-go')}`,
+        reposEnv: `orders=${extra.repoPath('orders-java')};pay=${workspace.repoPath('payments-go')}`,
         writeLog: () => {},
       }),
     );
-    expect(runtime.configSource).toEndWith(' + REPOS in .env');
+    expect(runtime.configSource).toStartWith('REPOS in .env (settings from ');
     expect(
       runtime.context.deps.repos
         .list()
         .map((repo) => repo.slug)
         .toSorted(),
-    ).toEqual(['again', 'contracts-proto', 'orders']);
+    ).toEqual(['orders', 'pay']);
     await runtime.close();
     extra.cleanup();
   });

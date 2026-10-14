@@ -224,17 +224,17 @@ serve.
 | `index.refreshSeconds`       | How often each repo's `HEAD` and git index are checked for changes (default 30).                                                                                                          |
 | `index.rescanMinutes`        | How often every file is re-checked for edits git has not seen yet (default 10).                                                                                                           |
 
-| `.env` variable                                                | Default                  | Meaning                                                                                           |
-| -------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
-| `MCP_API_KEY`                                                  | none                     | Required, at least 24 characters. `bun run setup` creates it; `bun run gen-key` prints a new one. |
-| `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Where the server listens. The tunnel is the only way in.                                          |
-| `CODEBASE_CONFIG`                                              | `./codebase.config.json` | Another config file.                                                                              |
-| `REPOS`                                                        | none                     | Extra repos as `name=path;name=path`, added to the config's. Restart `bun start` after a change.  |
-| `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                            |
-| `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                   |
-| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                    |
-| `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | per platform             | Tunnel settings for `bun tunnel`.                                                                 |
-| `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | none                     | Used by `bun run check` only.                                                                     |
+| `.env` variable                                                | Default                  | Meaning                                                                                                                                         |
+| -------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_API_KEY`                                                  | none                     | Required, at least 24 characters. `bun run setup` creates it; `bun run gen-key` prints a new one.                                               |
+| `PORT`, `HOST`                                                 | `8787`, `127.0.0.1`      | Where the server listens. The tunnel is the only way in.                                                                                        |
+| `CODEBASE_CONFIG`                                              | `./codebase.config.json` | Another config file.                                                                                                                            |
+| `REPOS`                                                        | none                     | `name=path;name=path`. When set, exactly these repos are served (the config's `roots`/`repos` are skipped). Restart `bun start` after a change. |
+| `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                                                                          |
+| `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                                                                 |
+| `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                                                                  |
+| `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | per platform             | Tunnel settings for `bun tunnel`.                                                                                                               |
+| `PUBLIC_URL`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | none                     | Used by `bun run check` only.                                                                                                                   |
 
 **The index** lives in `.cache/index/`, one SQLite file per repo, about a fifth of the size of the
 source. You can delete it at any time; it is rebuilt. Every 30 seconds the server checks each repo's
