@@ -61,6 +61,7 @@ export async function createRuntime(options: RuntimeOptions): Promise<Runtime> {
     fs,
     logger,
     pool: indexing.pool,
+    reindex: config.index.enabled ? (repo) => indexing.coordinator.enqueue(repo) : () => {},
     rgPath,
     blocked,
   });

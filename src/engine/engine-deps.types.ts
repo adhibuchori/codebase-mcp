@@ -1,6 +1,8 @@
 /** What the application layer needs from the outside world: ports only, wired in src/app-deps.ts. */
 import type { FileSystem } from '../ports/file-system.ts';
-import type { GitReader } from '../ports/git.ts';
+import type { BranchSwitchPolicy } from '../core/security/branch-switch.ts';
+import type { Repo } from '../core/model/domain.types.ts';
+import type { GitReader, GitSwitcher } from '../ports/git.ts';
 import type { IndexReader } from '../ports/index-store.ts';
 import type {
   Clock,
@@ -27,6 +29,11 @@ export interface EngineDeps {
   readonly rg: TextSearcher | null;
   readonly js: TextSearcher;
   readonly git: GitReader;
+  readonly switcher: GitSwitcher;
+  /** Which repos switch_branch may touch (ALLOW_BRANCH_SWITCH); off by default. */
+  readonly branchSwitch: BranchSwitchPolicy;
+  /** Queues a repo for indexing now, after its files changed (a no-op with the index off). */
+  readonly reindex: (repo: Repo) => void;
   readonly parser: SymbolParser;
   readonly languages: LanguageRegistry;
   readonly clock: Clock;

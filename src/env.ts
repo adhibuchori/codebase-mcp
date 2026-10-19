@@ -38,6 +38,7 @@ const schema = z.object({
   CODEBASE_CONFIG: z.string().default(''),
   REPOS: z.string().default(''),
   EXTRA_BLOCKED: z.string().default(''),
+  ALLOW_BRANCH_SWITCH: z.string().default(''),
   RG_PATH: z.string().default(''),
   CODEBASE_NO_RIPGREP: z.string().default(''),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -50,6 +51,8 @@ export interface AppEnv {
   readonly configPath: string;
   readonly reposEnv: string;
   readonly extraBlocked: string;
+  /** ALLOW_BRANCH_SWITCH: "" (off), "1" (every repo) or repo names. */
+  readonly branchSwitch: string;
   readonly rgPath: string;
   readonly disableRipgrep: boolean;
   readonly logLevel: 'debug' | 'info' | 'warn' | 'error';
@@ -79,6 +82,7 @@ export function loadEnv(projectDir: string): AppEnv {
     configPath: values.CODEBASE_CONFIG || join(projectDir, 'codebase.config.json'),
     reposEnv: values.REPOS,
     extraBlocked: values.EXTRA_BLOCKED,
+    branchSwitch: values.ALLOW_BRANCH_SWITCH,
     rgPath: values.RG_PATH,
     disableRipgrep: values.CODEBASE_NO_RIPGREP === '1' || values.CODEBASE_NO_RIPGREP === 'true',
     logLevel: values.LOG_LEVEL,

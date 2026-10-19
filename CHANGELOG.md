@@ -7,6 +7,20 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-19
+
+### Added
+
+- `switch_branch`: ClickUp Brain can list a repo's local branches and switch the repo to one of
+  them, so every tool reads that branch. Off by default; turn it on with `ALLOW_BRANCH_SWITCH=1` in
+  `.env` (or a comma-separated list of repo names) and restart `bun start`. It never fetches: a
+  branch that exists only on a remote is refused instead of created (`--no-guess`), git may not
+  reach any remote during the switch (`protocol.allow=never`, which also stops a partial clone from
+  downloading objects), repo hooks don't run, and submodules and Git LFS files are not downloaded.
+  A repo with uncommitted changes is refused, and there is no force. Every switch is logged, and the
+  index catches up with the changed files right away.
+- The `bun start` banner says when branch switching is on and for which repos.
+
 ## [2.1.1] - 2026-10-14
 
 ### Changed
@@ -163,7 +177,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...v2.1.0
 [2.0.3]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.2...v2.0.3

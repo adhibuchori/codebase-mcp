@@ -1,10 +1,13 @@
 /**
  * Server instructions: the short guide an MCP client may show the model on connect. Kept well
- * under 2,048 characters (Claude Code truncates longer instructions).
+ * under 2,048 characters (Claude Code truncates longer instructions). `switchable` names the repos
+ * switch_branch may touch ("" when it is off).
  */
-export function serverInstructions(repoCount: number): string {
+export function serverInstructions(repoCount: number, switchable = ''): string {
   return [
-    `Read-only access to ${repoCount} local code repositories. Nothing can be changed through these tools.`,
+    switchable
+      ? `Access to ${repoCount} local code repositories. Nothing can be changed except the checked-out branch: switch_branch lists and switches local branches (allowed for ${switchable}). Switch only when the user asks for a branch.`
+      : `Read-only access to ${repoCount} local code repositories. Nothing can be changed through these tools.`,
     'Work from broad to narrow:',
     '1. list_repos shows each service: languages, frameworks, endpoints, topics, last commit. Filter it by name, group or language.',
     '2. search_code finds text in every repo at once (literal by default, ranked, grouped by file). Narrow with repos, path or mode.',

@@ -7,6 +7,8 @@ export interface RuntimeOptions {
   readonly configPath: string;
   readonly reposEnv: string;
   readonly extraBlockedEnv: string;
+  /** The ALLOW_BRANCH_SWITCH variable ("" when unset: off). */
+  readonly branchSwitchEnv: string;
   readonly rgPath: string;
   readonly disableRipgrep: boolean;
   readonly childEnv: Readonly<Record<string, string>>;

@@ -4,6 +4,7 @@ import { cpus } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { createInventory } from '../adapters/fs/inventory.ts';
 import { createGitReader, listGitFiles } from '../adapters/git/git-reader.ts';
+import { createGitSwitcher } from '../adapters/git/git-switcher.ts';
 import { createShardPool, type ShardPool } from '../adapters/index/shard-pool.ts';
 import { loadSqlite } from '../adapters/index/sqlite.ts';
 import { createTreeSitterParser } from '../adapters/parse/tree-sitter-parser.ts';
@@ -11,7 +12,9 @@ import { createWorkerRunner } from '../adapters/runtime/worker-pool.ts';
 import { createJsSearcher } from '../adapters/search/js-searcher.ts';
 import { createRipgrepSearcher } from '../adapters/search/ripgrep-searcher.ts';
 import type { AppConfig } from '../config/config-schema.ts';
+import type { Repo } from '../core/model/domain.types.ts';
 import { tokensToChars } from '../core/output/budget.ts';
+import { parseBranchSwitch } from '../core/security/branch-switch.ts';
 import { globToRegex } from '../core/text/glob.ts';
 import type { EngineDeps } from '../engine/engine-deps.types.ts';
 import { createCoordinator, type IndexCoordinator } from '../indexer/coordinator.ts';
@@ -101,6 +104,7 @@ export interface EngineInput {
   readonly fs: FileSystem;
   readonly logger: Logger;
   readonly pool: ShardPool;
+  readonly reindex: (repo: Repo) => void;
   readonly rgPath: string | null;
   readonly blocked: readonly RegExp[];
 }
@@ -143,6 +147,9 @@ export function createEngineDeps(input: EngineInput): EngineDeps {
     rg: ripgrepSearcher(input),
     js: createJsSearcher({ fs, inventory, maxFileBytes: config.limits.maxFileBytes }),
     git: createGitReader(git, blocked),
+    switcher: createGitSwitcher(git),
+    branchSwitch: parseBranchSwitch(input.options.branchSwitchEnv),
+    reindex: input.reindex,
     parser: createTreeSitterParser({
       grammarsDir: settings.grammarsDir,
       queriesDir: settings.queriesDir,

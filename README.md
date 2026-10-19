@@ -58,7 +58,8 @@ behind, a search can miss a line you just wrote, but it never shows you an old o
 - **Precise.** Ranking puts definitions first and tests, generated and vendored files last. Symbol
   definitions come from tree-sitter grammars in 15 languages.
 - **Read-only by construction.** No tool writes, deletes or runs anything you choose. `.env` files
-  and secrets are never listed, searched, read or shown in a diff.
+  and secrets are never listed, searched, read or shown in a diff. The one exception is opt-in:
+  [switching a repo to a local branch](#switching-branches) from the chat.
 
 ## Contents
 
@@ -79,7 +80,8 @@ behind, a search can miss a line you just wrote, but it never shows you an old o
 
 ## Tools
 
-Nine tools, all read-only. Answers are plain text. Every location is written as `repo/path:line`,
+Nine read-only tools, plus `switch_branch` when you turn it on (see
+[switching branches](#switching-branches)). Answers are plain text. Every location is written as `repo/path:line`,
 and `read_code` takes that same form, so a result can be opened straight away.
 
 | Tool            | Use it to                                                                                                                                | Example input                                                           |
@@ -93,6 +95,7 @@ and `read_code` takes that same form, so a result can be opened straight away.
 | `triage_error`  | Paste a stack trace, log line, error message or URL; get the code behind it.                                                             | `{"text": "java.lang.IllegalStateException: …"}`                        |
 | `find_endpoint` | Follow a request: HTTP route to handler and callers, gRPC method to proto and implementation, topic to producers and consumers.          | `{"query": "POST /api/orders/42/cancel"}`                               |
 | `git_history`   | Recent commits, when a string appeared (pickaxe), blame, and one commit's diff.                                                          | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
+| `switch_branch` | Opt-in (`ALLOW_BRANCH_SWITCH`). List a repo's local branches, or switch it to one; never fetches.                                       | `{"repo": "orders", "branch": "develop"}`                               |
 
 A debugging session in ClickUp Brain often looks like this:
 
@@ -243,6 +246,7 @@ serve.
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | Another config file.                                                                                                                            |
 | `REPOS`                                                        | none                     | `name=path;name=path`. When set, exactly these repos are served (the config's `roots`/`repos` are skipped). Restart `bun start` after a change. |
 | `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                                                                          |
+| `ALLOW_BRANCH_SWITCH`                                          | off                      | `1` (every repo) or repo names, comma-separated: adds `switch_branch`. See [switching branches](#switching-branches). |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                                                                 |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                                                                  |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | per platform             | Tunnel settings for `bun tunnel`.                                                                                                               |
@@ -397,13 +401,32 @@ For Cursor or another client, the command is `bun` with the arguments
 | Messaging     | Kafka (Spring, kafka-go, sarama, confluent, kafkajs, kafka-python, aiokafka), RabbitMQ, MassTransit                                                                                                                         |
 | gRPC          | `.proto` services and methods, with their implementations and stubs                                                                                                                                                         |
 
+<a id="switching-branches"></a>
+
+**Switching branches from the chat** is off by default. Set `ALLOW_BRANCH_SWITCH=1` in `.env`
+(or a comma-separated list of repo names, such as `ALLOW_BRANCH_SWITCH=orders,payments`) and
+restart `bun start`. ClickUp Brain then gets a tenth tool, `switch_branch`: _"switch orders to
+develop"_ checks out that branch, and every other tool reads it from then on. The switch changes the
+folder on disk, so it suits a machine that only serves this MCP.
+
+- **Local branches only.** Nothing is fetched and no branch is created from a remote. Fetch a new
+  branch yourself first (`git fetch`).
+- **No network, no hooks.** Git may not reach any remote during the switch (`protocol.allow=never`,
+  which also stops a partial clone from downloading objects), repo hooks don't run, and submodules
+  and Git LFS downloads are skipped (LFS files stay pointers).
+- **Nothing is lost.** A repo with uncommitted changes is refused, and there is no force.
+- **Visible.** Every switch is logged (`branch switched`), the banner says
+  `Branch switching: on for …`, and the index catches up with the changed files in the background.
+
 A language is a folder under `src/languages/`. Adding one takes no change to the core; see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Security model
 
 - **Read-only.** No tool writes, deletes or runs anything a caller chooses. The only programs
-  started are `git`, with fixed read-only subcommands, and ripgrep. Both get an argument array,
+  started are `git`, with fixed read-only subcommands, and ripgrep. The one exception is opt-in:
+  with `ALLOW_BRANCH_SWITCH` set, `switch_branch` runs one fixed `git switch` to an existing local
+  branch, with no network, no hooks and no force. Both get an argument array,
   never a shell, and an environment with no secrets.
 - **Paths are jailed.** Absolute paths, `../` and symlinks that leave the repo are refused, both
   before and after the real path is resolved. `.git/` can't be read.

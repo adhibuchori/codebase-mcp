@@ -19,6 +19,20 @@ export function validateRevision(rev: string): string {
   return value;
 }
 
+const BRANCH = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/;
+
+/** A local branch name: no option, no revision syntax (~ ^ @{ ..), no trailing ".lock" or "/". */
+export function validateBranch(branch: string): string {
+  const value = branch.trim();
+  if (!BRANCH.test(value) || /\.\.|\/\/|\/$|\.lock$|\/\./.test(value)) {
+    throw new ToolError(
+      `"${branch}" is not a valid branch name.`,
+      'Use a local branch name such as develop or release/2.3.',
+    );
+  }
+  return value;
+}
+
 const SINCE = /^(\d{4}-\d{2}-\d{2}|\d{1,3}\s+(day|days|week|weeks|month|months|year|years))$/;
 
 /** A --since value: an ISO date or "N days|weeks|months|years". */

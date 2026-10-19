@@ -59,6 +59,25 @@ describe('createRuntime', () => {
     extra.cleanup();
   });
 
+  test('reindex after a branch switch queues the repo, unless the index is off', async () => {
+    const on = await createRuntime(testOptions(writeConfig(workspace), { writeLog: () => {} }));
+    const repo = on.context.deps.repos.get('payments-go');
+    if (!repo) throw new Error('payments-go was not discovered');
+    on.context.deps.reindex(repo);
+    expect(on.coordinator.live('payments-go')?.state).toBeDefined();
+    await on.coordinator.idle();
+    await on.close();
+    const off = await createRuntime(
+      testOptions(
+        writeConfig(workspace, { index: { enabled: false, dir: `${workspace.dir}/index` } }),
+        { writeLog: () => {} },
+      ),
+    );
+    off.context.deps.reindex(repo);
+    expect(off.coordinator.live('payments-go')).toBeUndefined();
+    await off.close();
+  });
+
   test('ripgrep can be switched off, leaving the JavaScript scanner', async () => {
     const runtime = await createRuntime(
       testOptions(writeConfig(workspace), { disableRipgrep: true, writeLog: () => {} }),

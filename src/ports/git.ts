@@ -1,4 +1,4 @@
-/** Port: read-only git history. Implemented by adapters/git/git-cli.ts with injection hardening. */
+/** Ports: read-only git history, and the opt-in branch switch. Implemented in adapters/git/. */
 import type { Repo } from '../core/model/domain.types.ts';
 
 export interface CommitSummary {
@@ -49,4 +49,20 @@ export interface GitReader {
     range: { start: number; end: number },
   ): Promise<readonly BlameLine[]>;
   show(repo: Repo, rev: string, maxLines: number): Promise<CommitDetail>;
+}
+
+export interface BranchState {
+  /** The checked-out branch, or "" on a detached HEAD. */
+  readonly current: string;
+  /** Local branches only (refs/heads), sorted. */
+  readonly branches: readonly string[];
+  /** Tracked files with uncommitted changes, staged or not. */
+  readonly changed: number;
+}
+
+/** Port: the one change the server can make, switching a repo to a local branch. Off by default. */
+export interface GitSwitcher {
+  state(repo: Repo): Promise<BranchState>;
+  /** Switches to a local branch that exists; never fetches, creates, forces or runs hooks. */
+  switchTo(repo: Repo, branch: string): Promise<void>;
 }
