@@ -51,18 +51,33 @@ export interface GitReader {
   show(repo: Repo, rev: string, maxLines: number): Promise<CommitDetail>;
 }
 
+/** A branch already fetched from a remote (refs/remotes): switching to it needs no network. */
+export interface RemoteBranch {
+  /** "origin/release/2.3". */
+  readonly ref: string;
+  /** "release/2.3": the local branch a switch creates from it. */
+  readonly name: string;
+  /** Date of its last commit (YYYY-MM-DD), as of the last fetch. */
+  readonly date: string;
+}
+
 export interface BranchState {
   /** The checked-out branch, or "" on a detached HEAD. */
   readonly current: string;
   /** Local branches only (refs/heads), sorted. */
   readonly branches: readonly string[];
+  /** Remote branches already on this machine, sorted, without the remotes' HEAD. */
+  readonly remote: readonly RemoteBranch[];
   /** Tracked files with uncommitted changes, staged or not. */
   readonly changed: number;
 }
 
-/** Port: the one change the server can make, switching a repo to a local branch. Off by default. */
+/** Port: the one change the server can make, switching a repo's branch. Off by default. */
 export interface GitSwitcher {
   state(repo: Repo): Promise<BranchState>;
-  /** Switches to a local branch that exists; never fetches, creates, forces or runs hooks. */
-  switchTo(repo: Repo, branch: string): Promise<void>;
+  /**
+   * Switches to a local branch, or creates it from an already fetched remote branch (`from`, such
+   * as "origin/develop"). Never fetches, forces or runs hooks.
+   */
+  switchTo(repo: Repo, branch: string, from?: string): Promise<void>;
 }

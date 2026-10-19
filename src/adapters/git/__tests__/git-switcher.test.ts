@@ -45,6 +45,7 @@ describe('state', () => {
     expect(await switcher.state(origin)).toEqual({
       current: 'main',
       branches: ['develop', 'main'],
+      remote: [],
       changed: 0,
     });
     writeFileSync(join(origin.root, 'untracked.txt'), 'new\n');
@@ -86,7 +87,18 @@ describe('switchTo', () => {
     git(origin.root, ['switch', '-q', 'main']);
   });
 
-  test('a branch that exists only on the remote is refused, never created from it', async () => {
+  test('lists the fetched remote branches, without the remote HEAD', async () => {
+    const clone = cloneOrigin('listed-clone', false);
+    const state = await switcher.state(repoAt(clone));
+    expect(state.branches).toEqual(['main']);
+    expect(state.remote.map((remote) => [remote.ref, remote.name])).toEqual([
+      ['origin/develop', 'develop'],
+      ['origin/main', 'main'],
+    ]);
+    expect(state.remote[0]?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('git never picks a remote branch on its own, which plain git would', async () => {
     const clone = cloneOrigin('whole-clone', false);
     expect((await rejectionOf(switcher.switchTo(repoAt(clone), 'develop'))).message).toContain(
       'invalid reference',
@@ -96,12 +108,21 @@ describe('switchTo', () => {
     expect(current(clone)).toBe('develop');
   });
 
+  test('creates a local branch from the fetched remote branch it is given, tracking it', async () => {
+    const clone = cloneOrigin('created-clone', false);
+    await switcher.switchTo(repoAt(clone), 'develop', 'origin/develop');
+    expect(current(clone)).toBe('develop');
+    expect(git(clone, ['rev-parse', '--abbrev-ref', 'develop@{upstream}']).trim()).toBe(
+      'origin/develop',
+    );
+    expect(existsSync(join(clone, 'DEVELOP.md'))).toBe(true);
+  });
+
   test('a partial clone never fetches the objects a switch would need', async () => {
     const clone = cloneOrigin('partial-clone', true);
-    git(clone, ['branch', '-q', 'develop', 'origin/develop']);
-    expect((await rejectionOf(switcher.switchTo(repoAt(clone), 'develop'))).message).toContain(
-      "transport 'file' not allowed",
-    );
+    expect(
+      (await rejectionOf(switcher.switchTo(repoAt(clone), 'develop', 'origin/develop'))).message,
+    ).toContain("transport 'file' not allowed");
     expect(current(clone)).toBe('main');
     git(clone, ['switch', '-q', 'develop']);
     expect(current(clone)).toBe('develop');
@@ -109,6 +130,9 @@ describe('switchTo', () => {
 
   test('a value that looks like an option is a branch name, and unknown', async () => {
     expect((await rejectionOf(switcher.switchTo(origin, '-f'))).message).toContain(
+      'invalid reference: -f',
+    );
+    expect((await rejectionOf(switcher.switchTo(origin, 'x', '-f'))).message).toContain(
       'invalid reference: -f',
     );
     expect(current(origin.root)).toBe('main');

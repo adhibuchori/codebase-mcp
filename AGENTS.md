@@ -173,9 +173,9 @@ Enforcement: tests, review.
 **Rule 52: Read-only by construction, with one opt-in exception.**
 
 - No tool writes, deletes or runs anything a caller chooses. The one exception is `switch_branch`,
-  registered only when `ALLOW_BRANCH_SWITCH` allows a repo. It switches to an existing local branch
-  with one fixed command (no fetch, no new branch, no force, no hooks, no network) and refuses a
-  repo with uncommitted changes. Any other write changes this rule first.
+  registered only when `ALLOW_BRANCH_SWITCH` allows a repo. It switches to a local branch, or creates
+  one from a remote branch already fetched, with one fixed command (no fetch, no force, no hooks, no
+  network) and refuses a repo with uncommitted changes. Any other write changes this rule first.
 - Programs are started with an argument array, never a shell: `git` with fixed subcommands
   (read-only, plus that one `switch`), and ripgrep.
 - Every path goes through `resolveFile` (`src/engine/file-access.ts`).
@@ -183,8 +183,8 @@ Enforcement: tests, review.
 
 Enforcement: `src/core/security/` tests, `src/adapters/git/__tests__/git-reader.test.ts` (injection
 attempts), `src/tools/files/__tests__/files.tools.test.ts` (traversal, symlinks, `.env`),
-`src/adapters/git/__tests__/git-switcher.test.ts` (hooks, remote-only branches, partial-clone
-fetches) and `src/tools/branches/__tests__/switch-branch.tool.test.ts` (off by default, refusals).
+`src/adapters/git/__tests__/git-switcher.test.ts` (hooks, git guessing a remote branch,
+partial-clone fetches) and `src/tools/branches/__tests__/switch-branch.tool.test.ts` (off by default, refusals).
 
 **Rule 53: Measure before and after.** A change to ranking, budgets, formats or extractors runs
 `bun run eval`, and `bun run bench` when speed may change. Results that move go in

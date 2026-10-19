@@ -15,6 +15,7 @@ import { buildMcpServer } from '../../registry/build-server.ts';
 let workspace: Workspace;
 let app: TestRuntime;
 let payments: string;
+let clone: string;
 
 beforeAll(async () => {
   workspace = createWorkspace({ repos: ['payments-go', 'orders-java'] });
@@ -23,7 +24,16 @@ beforeAll(async () => {
   appendFileSync(join(payments, 'main.go'), '\n// RetryBudgetExceeded is only on develop.\n');
   commitAll(payments, 'feat: retry budget');
   git(payments, ['switch', '-q', 'main']);
-  app = await startTestRuntime(workspace, { overrides: { branchSwitchEnv: 'payments-go' } });
+  /* Clones, like a freshly cloned work repo: only main is local, develop is a fetched origin/develop. */
+  clone = join(workspace.root, 'shop', 'payments-clone');
+  git(workspace.root, ['clone', '-q', `file://${payments}`, clone]);
+  const twice = join(workspace.root, 'shop', 'payments-twice');
+  git(workspace.root, ['clone', '-q', `file://${payments}`, twice]);
+  git(twice, ['remote', 'add', 'upstream', `file://${payments}`]);
+  git(twice, ['fetch', '-q', 'upstream']);
+  app = await startTestRuntime(workspace, {
+    overrides: { branchSwitchEnv: 'payments-go,payments-clone,payments-twice' },
+  });
 });
 
 afterAll(async () => {
@@ -89,7 +99,8 @@ describe('switch_branch', () => {
     expect(orders.text).toContain('not allowed for orders-java');
     const missing = await app.call('switch_branch', { repo: 'payments-go', branch: 'release/9' });
     expect(missing.isError).toBe(true);
-    expect(missing.text).toContain('does not exist in payments-go on this machine');
+    expect(missing.text).toContain('Branch "release/9" is not on this machine');
+    expect(missing.text).toContain('the owner runs git fetch first');
     const option = await app.call('switch_branch', { repo: 'payments-go', branch: '--force' });
     expect(option.text).toContain('not a valid branch name');
     expect(git(payments, ['branch', '--show-current']).trim()).toBe('main');
@@ -107,6 +118,36 @@ describe('switch_branch', () => {
     expect(readFileSync(main, 'utf8')).toEndWith('// work in progress\n');
     expect(git(payments, ['branch', '--show-current']).trim()).toBe('main');
     writeFileSync(main, before);
+  });
+
+  test('a fetched remote branch is listed, and switching creates its local branch', async () => {
+    const listed = await app.call('switch_branch', { repo: 'payments-clone' });
+    expect(listed.text).toStartWith('payments-clone: on main, 1 local branch.');
+    expect(listed.text).toContain('Fetched remote branches (1)');
+    expect(listed.text).toMatch(/ {2}origin\/develop \(last commit \d{4}-\d{2}-\d{2}\)/);
+    expect(listed.text).not.toContain('origin/main');
+    expect(listed.text).not.toContain('origin/HEAD');
+    const { text } = await app.call('switch_branch', { repo: 'payments-clone', branch: 'develop' });
+    expect(text).toStartWith('payments-clone switched from main to develop.');
+    expect(text).toContain('develop was created from origin/develop, the copy fetched earlier');
+    expect(text).toContain('Nothing was downloaded');
+    expect(git(clone, ['branch', '--show-current']).trim()).toBe('develop');
+    expect(app.logs.some((line) => line.includes('origin/develop'))).toBe(true);
+    const back = await app.call('switch_branch', { repo: 'payments-clone', branch: 'origin/main' });
+    expect(back.text).toBe(
+      'payments-clone switched from develop to main.\nEvery tool now reads this branch. The index catches up in the background; until then a search may miss lines that only this branch has.',
+    );
+  });
+
+  test('a branch fetched from two remotes has to be named with its remote', async () => {
+    const both = await app.call('switch_branch', { repo: 'payments-twice', branch: 'develop' });
+    expect(both.isError).toBe(true);
+    expect(both.text).toContain('fetched from several remotes: origin/develop, upstream/develop');
+    const named = await app.call('switch_branch', {
+      repo: 'payments-twice',
+      branch: 'upstream/develop',
+    });
+    expect(named.text).toContain('develop was created from upstream/develop');
   });
 
   test('a folder that is not a git repo is refused', async () => {

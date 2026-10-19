@@ -59,7 +59,7 @@ behind, a search can miss a line you just wrote, but it never shows you an old o
   definitions come from tree-sitter grammars in 15 languages.
 - **Read-only by construction.** No tool writes, deletes or runs anything you choose. `.env` files
   and secrets are never listed, searched, read or shown in a diff. The one exception is opt-in:
-  [switching a repo to a local branch](#switching-branches) from the chat.
+  [switching a repo's branch](#switching-branches) from the chat.
 
 ## Contents
 
@@ -95,7 +95,7 @@ and `read_code` takes that same form, so a result can be opened straight away.
 | `triage_error`  | Paste a stack trace, log line, error message or URL; get the code behind it.                                                             | `{"text": "java.lang.IllegalStateException: …"}`                        |
 | `find_endpoint` | Follow a request: HTTP route to handler and callers, gRPC method to proto and implementation, topic to producers and consumers.          | `{"query": "POST /api/orders/42/cancel"}`                               |
 | `git_history`   | Recent commits, when a string appeared (pickaxe), blame, and one commit's diff.                                                          | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
-| `switch_branch` | Opt-in (`ALLOW_BRANCH_SWITCH`). List a repo's local branches, or switch it to one; never fetches.                                       | `{"repo": "orders", "branch": "develop"}`                               |
+| `switch_branch` | Opt-in (`ALLOW_BRANCH_SWITCH`). List a repo's branches, or switch it to a local or already fetched one; never fetches.               | `{"repo": "orders", "branch": "develop"}`                               |
 
 A debugging session in ClickUp Brain often looks like this:
 
@@ -409,8 +409,10 @@ restart `bun start`. ClickUp Brain then gets a tenth tool, `switch_branch`: _"sw
 develop"_ checks out that branch, and every other tool reads it from then on. The switch changes the
 folder on disk, so it suits a machine that only serves this MCP.
 
-- **Local branches only.** Nothing is fetched and no branch is created from a remote. Fetch a new
-  branch yourself first (`git fetch`).
+- **Only what is already on this machine.** A local branch, or a remote branch you have already
+  fetched (a fresh clone has them all as `origin/…`): switching to one of those creates its local
+  branch from the copy on disk, and the answer says how fresh that copy is. Nothing is downloaded,
+  so for newer commits, or a branch that was never fetched, run `git fetch` yourself.
 - **No network, no hooks.** Git may not reach any remote during the switch (`protocol.allow=never`,
   which also stops a partial clone from downloading objects), repo hooks don't run, and submodules
   and Git LFS downloads are skipped (LFS files stay pointers).

@@ -12,8 +12,8 @@ numbered rules; this is the threat model behind them.
 - **No write path, except one the owner turns on.** No tool writes, deletes or runs anything a
   user can choose. Programs started: `git` (fixed read-only subcommands) and `rg`, both through
   `spawnCollect` with an argument array, never a shell. The exception is `switch_branch`, listed
-  only when `ALLOW_BRANCH_SWITCH` allows a repo: one fixed `git switch --no-guess` to an existing
-  local branch (`adapters/git/git-switcher.ts`), with `protocol.allow=never`, no hooks, no
+  only when `ALLOW_BRANCH_SWITCH` allows a repo: one fixed `git switch --no-guess` to a local
+  branch, or creating one from a remote branch already fetched (`adapters/git/git-switcher.ts`), with `protocol.allow=never`, no hooks, no
   submodules or LFS downloads, no force, and a refusal while tracked files have changes. The worst a
   prompt injection can do through it is switch a branch, which the log records and the owner can
   undo.

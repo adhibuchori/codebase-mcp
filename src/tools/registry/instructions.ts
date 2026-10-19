@@ -6,7 +6,7 @@
 export function serverInstructions(repoCount: number, switchable = ''): string {
   return [
     switchable
-      ? `Access to ${repoCount} local code repositories. Nothing can be changed except the checked-out branch: switch_branch lists and switches local branches (allowed for ${switchable}). Switch only when the user asks for a branch.`
+      ? `Access to ${repoCount} local code repositories. Nothing can be changed except the checked-out branch: switch_branch lists branches and switches to a local or already fetched one, never downloading anything (allowed for ${switchable}). Switch only when the user asks for a branch.`
       : `Read-only access to ${repoCount} local code repositories. Nothing can be changed through these tools.`,
     'Work from broad to narrow:',
     '1. list_repos shows each service: languages, frameworks, endpoints, topics, last commit. Filter it by name, group or language.',

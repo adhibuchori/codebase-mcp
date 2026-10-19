@@ -27,7 +27,9 @@ export function bannerLines(input: BannerInput): string[] {
     `${plural(input.repos.length, 'repo')}${groups.size > 0 ? ` in ${plural(groups.size, 'group')}` : ''} from ${input.configSource}: ${sample}${input.repos.length > 8 ? ', …' : ''}`,
     `Search: ${input.ripgrep ? 'ripgrep' : 'JavaScript scanner (ripgrep unavailable)'} + ${input.indexEnabled ? 'background index' : 'no index (disabled in config)'}`,
     ...(input.branchSwitch
-      ? [`Branch switching: on for ${input.branchSwitch} (local branches only, never fetches)`]
+      ? [
+          `Branch switching: on for ${input.branchSwitch} (local or already fetched branches, never downloads)`,
+        ]
       : []),
     ...input.problems.map((problem) => `warning: ${problem}`),
     'Open the tunnel in another terminal with: bun tunnel. Stop with Ctrl+C.',
