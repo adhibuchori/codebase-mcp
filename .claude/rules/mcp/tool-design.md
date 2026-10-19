@@ -26,5 +26,7 @@ Anthropic's "Writing effective tools for agents" and from measuring v1 (one `rea
 - **Descriptions** are 3–4 sentences with one JSON example, under 2,048 characters, in English.
   Tool names are snake_case without dots (some clients reject dots).
 - **≤ 9 tools.** More tools cost tokens on every request and confuse selection; extend an
-  existing tool with a mode before adding one.
+  existing tool with a mode before adding one. The opt-in `switch_branch` is the one tool beyond
+  nine: it is listed only when `ALLOW_BRANCH_SWITCH` turns it on, and it is kept apart so that no
+  read-only tool loses its `readOnlyHint`.
 - **Measure.** A change to ranking, budgets or formats runs `bun run eval` before and after.

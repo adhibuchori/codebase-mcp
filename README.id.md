@@ -62,7 +62,8 @@ menampilkan baris lama.
   bawah. Definisi simbol berasal dari grammar tree-sitter untuk 15 bahasa.
 - **Read-only sejak desainnya.** Tidak ada tool yang menulis, menghapus, atau menjalankan apa pun
   pilihan pemanggil. File `.env` dan rahasia tidak pernah ditampilkan, dicari, dibaca, maupun
-  muncul di diff.
+  muncul di diff. Satu-satunya pengecualian harus dinyalakan sendiri:
+  [memindahkan repo ke branch lokal](#pindah-branch) lewat chat.
 
 ## Isi
 
@@ -83,7 +84,8 @@ menampilkan baris lama.
 
 ## Tools
 
-Ada sembilan tool, semuanya read-only. Jawaban berupa teks biasa. Setiap lokasi ditulis sebagai
+Ada sembilan tool read-only, ditambah `switch_branch` kalau Anda menyalakannya (lihat
+[pindah branch](#pindah-branch)). Jawaban berupa teks biasa. Setiap lokasi ditulis sebagai
 `repo/path:line`, dan `read_code` menerima bentuk yang sama, jadi hasilnya bisa langsung dibuka.
 
 | Tool            | Gunakan untuk                                                                                                                                                        | Contoh input                                                            |
@@ -97,6 +99,7 @@ Ada sembilan tool, semuanya read-only. Jawaban berupa teks biasa. Setiap lokasi 
 | `triage_error`  | Tempel stack trace, baris log, pesan error, atau URL; dapatkan kode di baliknya.                                                                                     | `{"text": "java.lang.IllegalStateException: …"}`                        |
 | `find_endpoint` | Menelusuri request: route HTTP ke handler dan pemanggilnya, method gRPC ke proto dan implementasinya, topic ke producer dan consumer.                                | `{"query": "POST /api/orders/42/cancel"}`                               |
 | `git_history`   | Commit terbaru, kapan sebuah string muncul (pickaxe), blame, dan diff satu commit.                                                                                   | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
+| `switch_branch` | Opsional (`ALLOW_BRANCH_SWITCH`). Daftar branch lokal sebuah repo, atau pindahkan repo ke salah satunya; tidak pernah fetch.                          | `{"repo": "orders", "branch": "develop"}`                               |
 
 Sesi debugging di ClickUp Brain biasanya seperti ini:
 
@@ -248,6 +251,7 @@ dilayani.
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | File config lain.                                                                                                                               |
 | `REPOS`                                                        | tidak ada                | `nama=path;nama=path`. Kalau diisi, hanya repo ini yang dilayani (`roots`/`repos` di config dilewati). Restart `bun start` setelah mengubahnya. |
 | `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                                                                           |
+| `ALLOW_BRANCH_SWITCH`                                          | mati                     | `1` (semua repo) atau nama repo dipisah koma: menambah `switch_branch`. Lihat [pindah branch](#pindah-branch). |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                                                                                 |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                                                                       |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | sesuai platform          | Pengaturan tunnel untuk `bun tunnel`.                                                                                                           |
@@ -404,6 +408,23 @@ Untuk Cursor atau klien lain, perintahnya `bun` dengan argumen
 | Messaging      | Kafka (Spring, kafka-go, sarama, confluent, kafkajs, kafka-python, aiokafka), RabbitMQ, MassTransit                                                                                                                       |
 | gRPC           | Service dan method di `.proto`, beserta implementasi dan stub-nya                                                                                                                                                         |
 
+<a id="pindah-branch"></a>
+
+**Pindah branch lewat chat** mati secara default. Isi `ALLOW_BRANCH_SWITCH=1` di `.env` (atau
+daftar nama repo dipisah koma, misalnya `ALLOW_BRANCH_SWITCH=orders,payments`), lalu restart
+`bun start`. ClickUp Brain lalu mendapat tool kesepuluh, `switch_branch`: _"pindahkan orders ke
+develop"_ men-checkout branch itu, dan semua tool lain membacanya sejak saat itu. Perpindahan ini
+mengubah folder di disk, jadi cocok untuk mesin yang hanya melayani MCP ini.
+
+- **Hanya branch lokal.** Tidak ada fetch, dan tidak ada branch baru yang dibuat dari remote. Fetch
+  branch baru sendiri dulu (`git fetch`).
+- **Tanpa jaringan, tanpa hook.** Git tidak boleh menghubungi remote apa pun saat pindah
+  (`protocol.allow=never`, yang juga mencegah partial clone mengunduh objek), hook repo tidak
+  dijalankan, dan submodule serta unduhan Git LFS dilewati (file LFS tetap berupa pointer).
+- **Tidak ada yang hilang.** Repo dengan perubahan yang belum di-commit ditolak, dan tidak ada force.
+- **Terlihat.** Setiap perpindahan dicatat di log (`branch switched`), banner menampilkan
+  `Branch switching: on for …`, dan index menyusul file yang berubah di background.
+
 Satu bahasa adalah satu folder di bawah `src/languages/`. Menambah bahasa tidak perlu mengubah
 core; lihat [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -412,6 +433,9 @@ core; lihat [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Read-only.** Tidak ada tool yang menulis, menghapus, atau menjalankan apa pun pilihan
   pemanggil. Program yang dijalankan hanya `git`, dengan subcommand read-only yang sudah tetap, dan
   ripgrep. Keduanya menerima array argumen, tidak pernah lewat shell, dan environment tanpa rahasia.
+  Satu-satunya pengecualian harus dinyalakan sendiri: dengan `ALLOW_BRANCH_SWITCH`, `switch_branch`
+  menjalankan satu `git switch` yang sudah tetap ke branch lokal yang ada, tanpa jaringan, tanpa
+  hook, dan tanpa force.
 - **Path dikurung.** Path absolut, `../`, dan symlink yang keluar dari repo ditolak, baik sebelum
   maupun sesudah path aslinya di-resolve. `.git/` tidak bisa dibaca.
 - **Rahasia tetap tersembunyi.** Yang berikut tidak pernah ditampilkan, di-index, dicari, dibaca,

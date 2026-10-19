@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { ToolError } from '../../errors/tool-error.ts';
-import { parseLineRange, validatePickaxe, validateRevision, validateSince } from '../git-input.ts';
+import {
+  parseLineRange,
+  validateBranch,
+  validatePickaxe,
+  validateRevision,
+  validateSince,
+} from '../git-input.ts';
 
 describe('validateRevision', () => {
   test.each(['a1b2c3d', 'main', 'release/1.2', 'HEAD~3', 'v2.0.0', 'HEAD^{commit}', 'origin/main'])(
@@ -16,6 +22,33 @@ describe('validateRevision', () => {
       expect(() => validateRevision(rev)).toThrow(ToolError);
     },
   );
+});
+
+describe('validateBranch', () => {
+  test.each(['main', 'develop', 'release/2.3', 'feature/JIRA-12_fix', 'v2.x'])(
+    'accepts %s',
+    (name) => {
+      expect(validateBranch(` ${name} `)).toBe(name);
+    },
+  );
+
+  test.each([
+    '-f',
+    '--force',
+    'HEAD~1',
+    'main^',
+    'a..b',
+    'a b',
+    'main@{1}',
+    'feature/',
+    'a//b',
+    'x.lock',
+    'a/.hidden',
+    '',
+    'x'.repeat(201),
+  ])('refuses %s', (name) => {
+    expect(() => validateBranch(name)).toThrow(ToolError);
+  });
 });
 
 describe('validateSince', () => {

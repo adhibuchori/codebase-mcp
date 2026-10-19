@@ -170,16 +170,21 @@ only erasable TypeScript syntax is used. Enforcement: oxlint `no-restricted-glob
 
 Enforcement: tests, review.
 
-**Rule 52: Read-only by construction.**
+**Rule 52: Read-only by construction, with one opt-in exception.**
 
-- No tool writes, deletes or runs anything a caller chooses.
-- Programs are started with an argument array, never a shell: `git` with fixed read-only
-  subcommands, and ripgrep.
+- No tool writes, deletes or runs anything a caller chooses. The one exception is `switch_branch`,
+  registered only when `ALLOW_BRANCH_SWITCH` allows a repo. It switches to an existing local branch
+  with one fixed command (no fetch, no new branch, no force, no hooks, no network) and refuses a
+  repo with uncommitted changes. Any other write changes this rule first.
+- Programs are started with an argument array, never a shell: `git` with fixed subcommands
+  (read-only, plus that one `switch`), and ripgrep.
 - Every path goes through `resolveFile` (`src/engine/file-access.ts`).
 - Every answer goes through `redactSecrets`.
 
 Enforcement: `src/core/security/` tests, `src/adapters/git/__tests__/git-reader.test.ts` (injection
-attempts), `src/tools/files/__tests__/files.tools.test.ts` (traversal, symlinks, `.env`).
+attempts), `src/tools/files/__tests__/files.tools.test.ts` (traversal, symlinks, `.env`),
+`src/adapters/git/__tests__/git-switcher.test.ts` (hooks, remote-only branches, partial-clone
+fetches) and `src/tools/branches/__tests__/switch-branch.tool.test.ts` (off by default, refusals).
 
 **Rule 53: Measure before and after.** A change to ranking, budgets, formats or extractors runs
 `bun run eval`, and `bun run bench` when speed may change. Results that move go in

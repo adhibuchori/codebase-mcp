@@ -1,7 +1,8 @@
 /**
- * How a tool is declared and registered. Every tool is read-only and closed-world, every answer is
- * redacted and held under the response budget, and every failure becomes an `isError` result the
- * model can act on (a ToolError keeps its message and hint; anything else stays generic and is logged).
+ * How a tool is declared and registered. Every tool is closed-world and read-only, except the opt-in
+ * switch_branch, which says so in its annotations. Every answer is redacted and held under the
+ * response budget, and every failure becomes an `isError` result the model can act on (a ToolError
+ * keeps its message and hint; anything else stays generic and is logged).
  */
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -18,24 +19,26 @@ export interface ToolContext {
   readonly budget: number;
 }
 
-export interface ToolDef<Shape extends z.ZodRawShape> {
-  readonly name: string;
-  readonly title: string;
-  readonly description: string;
-  readonly input: Shape;
-  run(args: z.output<z.ZodObject<Shape>>, context: ToolContext): Promise<string>;
-}
-
-export type ToolRegistrar = (server: McpServer, context: ToolContext) => void;
-
-type TextResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
-
 const ANNOTATIONS = {
   readOnlyHint: true,
   destructiveHint: false,
   idempotentHint: true,
   openWorldHint: false,
 };
+
+export interface ToolDef<Shape extends z.ZodRawShape> {
+  readonly name: string;
+  readonly title: string;
+  readonly description: string;
+  readonly input: Shape;
+  /** Only for a tool that changes something (switch_branch); the default is read-only. */
+  readonly annotations?: Partial<typeof ANNOTATIONS>;
+  run(args: z.output<z.ZodObject<Shape>>, context: ToolContext): Promise<string>;
+}
+
+export type ToolRegistrar = (server: McpServer, context: ToolContext) => void;
+
+type TextResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
 
 /** Arguments arrive already validated by the SDK; parsing them again gives the tool its exact types. */
 async function execute<Shape extends z.ZodRawShape>(
@@ -75,7 +78,7 @@ export function defineTool<Shape extends z.ZodRawShape>(def: ToolDef<Shape>): To
         title: def.title,
         description: def.description,
         inputSchema,
-        annotations: { title: def.title, ...ANNOTATIONS },
+        annotations: { title: def.title, ...ANNOTATIONS, ...def.annotations },
       },
       (args: unknown) => execute(def, args, context),
     );

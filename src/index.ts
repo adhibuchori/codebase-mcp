@@ -10,6 +10,7 @@ import { startHttpServer } from './adapters/runtime/serve.ts';
 import { createApp } from './app.ts';
 import { bannerLines, strongEnough, USAGE } from './cli/banner.ts';
 import { createRuntime, type Runtime } from './composition/create-runtime.ts';
+import { describeBranchSwitch } from './core/security/branch-switch.ts';
 import { loadEnv, type AppEnv } from './env.ts';
 import { handleMcpRequest } from './http/mcp/mcp-transport.ts';
 import { createRateLimiter } from './http/middlewares/rate-limit.middleware.ts';
@@ -24,6 +25,7 @@ function runtimeFor(env: AppEnv): Promise<Runtime> {
     configPath: env.configPath,
     reposEnv: env.reposEnv,
     extraBlockedEnv: env.extraBlocked,
+    branchSwitchEnv: env.branchSwitch,
     rgPath: env.rgPath,
     disableRipgrep: env.disableRipgrep,
     childEnv: env.childEnv,
@@ -59,6 +61,7 @@ async function start(env: AppEnv): Promise<void> {
     configSource: runtime.configSource,
     ripgrep: runtime.ripgrep,
     indexEnabled: runtime.indexEnabled,
+    branchSwitch: describeBranchSwitch(runtime.context.deps.branchSwitch),
     problems: runtime.problems,
   }))
     logger.info(line);

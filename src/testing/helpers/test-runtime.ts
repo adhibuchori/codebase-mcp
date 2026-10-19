@@ -33,6 +33,7 @@ export function testOptions(
     configPath,
     reposEnv: '',
     extraBlockedEnv: '',
+    branchSwitchEnv: '',
     rgPath: '',
     disableRipgrep: false,
     childEnv: { PATH: process.env['PATH'] ?? '' },

@@ -1,7 +1,8 @@
 # Security
 
 codebase-mcp exposes local source code to a cloud assistant through a tunnel, so it is built to be
-read-only and to keep secrets out of every answer. The threat model is in
+read-only (apart from the opt-in branch switch, off by default) and to keep secrets out of every
+answer. The threat model is in
 [.claude/rules/security/read-only.md](.claude/rules/security/read-only.md), and the user-facing
 summary in the README's "Security model" section.
 

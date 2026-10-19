@@ -11,6 +11,8 @@ export interface BannerInput {
   readonly configSource: string;
   readonly ripgrep: string | null;
   readonly indexEnabled: boolean;
+  /** The repos switch_branch may touch ("every repo", names), or "" when it is off. */
+  readonly branchSwitch: string;
   readonly problems: readonly string[];
 }
 
@@ -21,9 +23,12 @@ export function bannerLines(input: BannerInput): string[] {
     .map((repo) => repo.slug)
     .join(', ');
   return [
-    `codebase-mcp ${input.version} on ${input.runtime} · MCP endpoint ${input.url}/mcp · read-only`,
+    `codebase-mcp ${input.version} on ${input.runtime} · MCP endpoint ${input.url}/mcp · read-only${input.branchSwitch ? ' except switch_branch' : ''}`,
     `${plural(input.repos.length, 'repo')}${groups.size > 0 ? ` in ${plural(groups.size, 'group')}` : ''} from ${input.configSource}: ${sample}${input.repos.length > 8 ? ', …' : ''}`,
     `Search: ${input.ripgrep ? 'ripgrep' : 'JavaScript scanner (ripgrep unavailable)'} + ${input.indexEnabled ? 'background index' : 'no index (disabled in config)'}`,
+    ...(input.branchSwitch
+      ? [`Branch switching: on for ${input.branchSwitch} (local branches only, never fetches)`]
+      : []),
     ...input.problems.map((problem) => `warning: ${problem}`),
     'Open the tunnel in another terminal with: bun tunnel. Stop with Ctrl+C.',
   ];

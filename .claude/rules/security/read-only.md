@@ -9,9 +9,14 @@ paths:
 This server exposes local code to a cloud assistant through a tunnel. `AGENTS.md` §F holds the
 numbered rules; this is the threat model behind them.
 
-- **No write path.** No tool writes, deletes or runs anything a user can choose. Programs started:
-  `git` (fixed read-only subcommands) and `rg`, both through `spawnCollect` with an argument array,
-  never a shell.
+- **No write path, except one the owner turns on.** No tool writes, deletes or runs anything a
+  user can choose. Programs started: `git` (fixed read-only subcommands) and `rg`, both through
+  `spawnCollect` with an argument array, never a shell. The exception is `switch_branch`, listed
+  only when `ALLOW_BRANCH_SWITCH` allows a repo: one fixed `git switch --no-guess` to an existing
+  local branch (`adapters/git/git-switcher.ts`), with `protocol.allow=never`, no hooks, no
+  submodules or LFS downloads, no force, and a refusal while tracked files have changes. The worst a
+  prompt injection can do through it is switch a branch, which the log records and the owner can
+  undo.
 - **Paths are jailed.** Every user path goes through `normalizeRelative` and
   `engine/file-access.ts#resolveFile`: no absolute paths, no `..` out of the repo, symlinks resolved
   and checked again, `.git` and sensitive names refused on the real path too.

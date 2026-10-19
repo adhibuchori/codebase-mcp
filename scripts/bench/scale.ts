@@ -70,6 +70,7 @@ const deps = createEngineDeps({
   fs,
   logger,
   pool: indexing.pool,
+  reindex: () => {},
   rgPath,
   blocked: [],
 });

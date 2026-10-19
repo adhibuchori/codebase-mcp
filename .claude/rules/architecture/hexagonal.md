@@ -8,17 +8,17 @@ paths:
 `AGENTS.md` §B holds the numbered rules; this file explains the layout they protect. Lint enforces
 every import boundary below (`.oxlintrc.json` overrides with `no-restricted-imports`).
 
-| Layer | Folder | May import | Never imports |
-| --- | --- | --- | --- |
-| Domain | `src/core/` | other `core/` | I/O (`node:fs`, `node:child_process`), `bun:*`, Hono, the MCP SDK, any outer layer |
-| Language packs | `src/languages/` | `core/` | the same as `core/`, plus `config/` |
-| Ports | `src/ports/` | types from `core/` | anything at runtime (type-only files) |
-| Application | `src/engine/` | `core/`, `ports/` | `adapters/`, `tools/`, `http/`, `node:fs`, `node:child_process` |
-| Tools | `src/tools/` | `core/`, `engine/`, `ports/`, the MCP SDK (registry only) | `adapters/`, `http/`, `indexer/`, `node:fs` |
-| Adapters | `src/adapters/` | `core/`, `ports/`, Node and Bun APIs | `tools/`, `http/`, `engine/` |
-| Indexer | `src/indexer/` | `core/`, `ports/`, `adapters/`, `languages/` | `tools/`, `http/`, `engine/` |
-| HTTP | `src/http/` | `core/`, `ports/`, Hono, the MCP SDK | — |
-| Composition | `src/composition/`, `src/app.ts`, `src/index.ts`, `src/env.ts` | everything | — |
+| Layer          | Folder                                                         | May import                                                | Never imports                                                                      |
+| -------------- | -------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Domain         | `src/core/`                                                    | other `core/`                                             | I/O (`node:fs`, `node:child_process`), `bun:*`, Hono, the MCP SDK, any outer layer |
+| Language packs | `src/languages/`                                               | `core/`                                                   | the same as `core/`, plus `config/`                                                |
+| Ports          | `src/ports/`                                                   | types from `core/`                                        | anything at runtime (type-only files)                                              |
+| Application    | `src/engine/`                                                  | `core/`, `ports/`                                         | `adapters/`, `tools/`, `http/`, `node:fs`, `node:child_process`                    |
+| Tools          | `src/tools/`                                                   | `core/`, `engine/`, `ports/`, the MCP SDK (registry only) | `adapters/`, `http/`, `indexer/`, `node:fs`                                        |
+| Adapters       | `src/adapters/`                                                | `core/`, `ports/`, Node and Bun APIs                      | `tools/`, `http/`, `engine/`                                                       |
+| Indexer        | `src/indexer/`                                                 | `core/`, `ports/`, `adapters/`, `languages/`              | `tools/`, `http/`, `engine/`                                                       |
+| HTTP           | `src/http/`                                                    | `core/`, `ports/`, Hono, the MCP SDK                      | —                                                                                  |
+| Composition    | `src/composition/`, `src/app.ts`, `src/index.ts`, `src/env.ts` | everything                                                | —                                                                                  |
 
 ## Why this shape
 
@@ -35,8 +35,8 @@ every import boundary below (`.oxlintrc.json` overrides with `no-restricted-impo
 `src/tools/<domain>/<name>.tool.ts` declares the input (zod), the description (3–4 sentences and an
 example, under 2,048 characters) and a thin `run` (≤ 15 lines, AGENTS.md Rule 28) that calls a
 `<domain>.service.ts` and renders through a `<domain>.format.ts`. Register it in
-`src/tools/registry/build-server.ts`; `defineTool` adds the read-only annotations, redaction, the
-response budget and the error contract.
+`src/tools/registry/build-server.ts`; `defineTool` adds the read-only annotations (a tool that
+changes something overrides them), redaction, the response budget and the error contract.
 
 ## Dependency injection
 

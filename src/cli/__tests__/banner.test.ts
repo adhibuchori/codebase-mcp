@@ -16,6 +16,7 @@ test('the banner names the endpoint, the repos, the search engines and any probl
     configSource: 'codebase.config.json',
     ripgrep: '/bin/rg',
     indexEnabled: true,
+    branchSwitch: '',
     problems: ['root ~/old does not exist'],
   });
   expect(lines[0]).toBe(
@@ -28,7 +29,7 @@ test('the banner names the endpoint, the repos, the search engines and any probl
   expect(lines[3]).toBe('warning: root ~/old does not exist');
 });
 
-test('without ripgrep, groups or the index the banner says so', () => {
+test('without ripgrep, groups or the index the banner says so, and names branch switching', () => {
   const lines = bannerLines({
     version: '2.0.0',
     runtime: 'node 22.18.0',
@@ -37,11 +38,18 @@ test('without ripgrep, groups or the index the banner says so', () => {
     configSource: 'REPOS',
     ripgrep: null,
     indexEnabled: false,
+    branchSwitch: 'orders, payments',
     problems: [],
   });
+  expect(lines[0]).toBe(
+    'codebase-mcp 2.0.0 on node 22.18.0 · MCP endpoint http://x/mcp · read-only except switch_branch',
+  );
   expect(lines[1]).toBe('1 repo from REPOS: a');
   expect(lines[2]).toBe(
     'Search: JavaScript scanner (ripgrep unavailable) + no index (disabled in config)',
+  );
+  expect(lines[3]).toBe(
+    'Branch switching: on for orders, payments (local branches only, never fetches)',
   );
 });
 
