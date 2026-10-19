@@ -7,6 +7,18 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-10-19
+
+### Fixed
+
+- `switch_branch` can switch to a remote branch that is already on this machine. A fresh clone has
+  only its default branch locally and every other branch as `origin/…`, so v2.2.0 refused almost
+  every switch. Switching to `develop` (or `origin/develop`) now creates the local branch from that
+  fetched copy, with no network, and the answer gives the date of its last commit. Listing a repo
+  shows these fetched branches too. Nothing is ever downloaded: `protocol.allow=never` stays, a
+  branch that was never fetched is refused, and a name fetched from several remotes has to be named
+  with its remote.
+
 ## [2.2.0] - 2026-10-19
 
 ### Added
@@ -177,7 +189,8 @@ The single-file JavaScript server that ClickUp Brain used first.
   limit, and blocking of `.env` files and other sensitive names.
 - `bun start`, `bun tunnel` (Cloudflare on Mac, Pinggy on Windows) and `bun run check`.
 
-[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/codebase-mcp/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/adhibuchori/codebase-mcp/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/adhibuchori/codebase-mcp/compare/v2.0.3...v2.1.0

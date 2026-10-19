@@ -234,30 +234,33 @@ pager and no fsmonitor.
 
 ## switch_branch
 
-Lists one repo's local branches, or switches the repo to one of them, so every other tool reads that
-branch. Off by default: the tool is listed only when `ALLOW_BRANCH_SWITCH` in `.env` allows at least
+Lists one repo's branches, or switches the repo to one of them, so every other tool reads that
+branch. A branch is local, or a remote branch already fetched to this machine (a fresh clone has
+every branch as `origin/…`); switching to the latter creates its local branch from the copy on disk. Off by default: the tool is listed only when `ALLOW_BRANCH_SWITCH` in `.env` allows at least
 one repo (`1` for every repo, or names separated by commas). It is the only tool that changes
 anything (`readOnlyHint: false`, `destructiveHint: false`).
 
 | Argument | Default  | Meaning                                                |
 | -------- | -------- | ------------------------------------------------------ |
 | `repo`   | required | Repo name                                              |
-| `branch` | none     | Local branch to switch to; leave it out to list them   |
+| `branch` | none     | `develop` or `origin/develop`; leave it out to list    |
 
 ```text
-payments-go: on main, 2 local branches.
+payments-clone: on main, 1 local branch.
 * main
-  develop
-A branch that exists only on the remote has to be fetched by the owner first.
+Fetched remote branches (1); switching to one creates its local branch, with no network:
+  origin/develop (last commit 2026-10-19)
+A branch that is not listed was never fetched; the owner runs git fetch first.
 ```
 
 ```text
-payments-go switched from main to develop.
+payments-clone switched from main to develop.
+develop was created from origin/develop, the copy fetched earlier (last commit 2026-10-19). Nothing was downloaded; newer commits on the server appear after the owner runs git fetch.
 Every tool now reads this branch. The index catches up in the background; until then a search may miss lines that only this branch has.
 ```
 
-Refused, before git runs: a repo `ALLOW_BRANCH_SWITCH` does not name, a branch that does not exist
-locally, a name that is not a plain branch name (`--force`, `HEAD~1`, `a..b`), and a repo with
+Refused, before git runs: a repo `ALLOW_BRANCH_SWITCH` does not name, a branch that is neither
+local nor fetched, a name fetched from several remotes (name one, `upstream/develop`), a name that is not a plain branch name (`--force`, `HEAD~1`, `a..b`), and a repo with
 uncommitted changes to tracked files. The switch itself is one fixed command:
 
 ```text
@@ -266,6 +269,8 @@ git -c core.hooksPath=/dev/null -c protocol.allow=never -c submodule.recurse=fal
     switch --no-guess --no-recurse-submodules --quiet --end-of-options <branch>
 ```
 
-`--no-guess` refuses a branch that exists only on a remote instead of creating it.
+For a fetched remote branch the end becomes `--track --create=<branch> --end-of-options
+origin/<branch>`, with the remote branch the service chose. `--no-guess` keeps git from picking
+one on its own.
 `protocol.allow=never` stops git from reaching any remote, even for a partial clone's missing
 objects. No repo hook runs, and submodules and Git LFS files are not downloaded.

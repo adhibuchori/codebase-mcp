@@ -1,6 +1,6 @@
 {
   "name": "codebase-mcp",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "private": true,
   "description": "Read-only MCP server that lets AI assistants search and read many local repos — fast, token-efficient, built for debugging microservices (Mac and Windows).",
   "license": "UNLICENSED",

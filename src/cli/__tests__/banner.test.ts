@@ -49,7 +49,7 @@ test('without ripgrep, groups or the index the banner says so, and names branch 
     'Search: JavaScript scanner (ripgrep unavailable) + no index (disabled in config)',
   );
   expect(lines[3]).toBe(
-    'Branch switching: on for orders, payments (local branches only, never fetches)',
+    'Branch switching: on for orders, payments (local or already fetched branches, never downloads)',
   );
 });
 

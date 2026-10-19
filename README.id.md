@@ -63,7 +63,7 @@ menampilkan baris lama.
 - **Read-only sejak desainnya.** Tidak ada tool yang menulis, menghapus, atau menjalankan apa pun
   pilihan pemanggil. File `.env` dan rahasia tidak pernah ditampilkan, dicari, dibaca, maupun
   muncul di diff. Satu-satunya pengecualian harus dinyalakan sendiri:
-  [memindahkan repo ke branch lokal](#pindah-branch) lewat chat.
+  [memindahkan branch sebuah repo](#pindah-branch) lewat chat.
 
 ## Isi
 
@@ -99,7 +99,7 @@ Ada sembilan tool read-only, ditambah `switch_branch` kalau Anda menyalakannya (
 | `triage_error`  | Tempel stack trace, baris log, pesan error, atau URL; dapatkan kode di baliknya.                                                                                     | `{"text": "java.lang.IllegalStateException: …"}`                        |
 | `find_endpoint` | Menelusuri request: route HTTP ke handler dan pemanggilnya, method gRPC ke proto dan implementasinya, topic ke producer dan consumer.                                | `{"query": "POST /api/orders/42/cancel"}`                               |
 | `git_history`   | Commit terbaru, kapan sebuah string muncul (pickaxe), blame, dan diff satu commit.                                                                                   | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
-| `switch_branch` | Opsional (`ALLOW_BRANCH_SWITCH`). Daftar branch lokal sebuah repo, atau pindahkan repo ke salah satunya; tidak pernah fetch.                          | `{"repo": "orders", "branch": "develop"}`                               |
+| `switch_branch` | Opsional (`ALLOW_BRANCH_SWITCH`). Daftar branch sebuah repo, atau pindahkan ke branch lokal atau yang sudah di-fetch; tidak pernah fetch.             | `{"repo": "orders", "branch": "develop"}`                               |
 
 Sesi debugging di ClickUp Brain biasanya seperti ini:
 
@@ -416,8 +416,11 @@ daftar nama repo dipisah koma, misalnya `ALLOW_BRANCH_SWITCH=orders,payments`), 
 develop"_ men-checkout branch itu, dan semua tool lain membacanya sejak saat itu. Perpindahan ini
 mengubah folder di disk, jadi cocok untuk mesin yang hanya melayani MCP ini.
 
-- **Hanya branch lokal.** Tidak ada fetch, dan tidak ada branch baru yang dibuat dari remote. Fetch
-  branch baru sendiri dulu (`git fetch`).
+- **Hanya yang sudah ada di mesin ini.** Branch lokal, atau branch remote yang sudah pernah
+  di-fetch (clone baru sudah punya semuanya sebagai `origin/…`): pindah ke salah satunya membuat
+  branch lokalnya dari salinan di disk, dan jawabannya menyebut seberapa baru salinan itu. Tidak ada
+  yang diunduh, jadi untuk commit terbaru, atau branch yang belum pernah di-fetch, jalankan
+  `git fetch` sendiri.
 - **Tanpa jaringan, tanpa hook.** Git tidak boleh menghubungi remote apa pun saat pindah
   (`protocol.allow=never`, yang juga mencegah partial clone mengunduh objek), hook repo tidak
   dijalankan, dan submodule serta unduhan Git LFS dilewati (file LFS tetap berupa pointer).
@@ -434,8 +437,8 @@ core; lihat [CONTRIBUTING.md](CONTRIBUTING.md).
   pemanggil. Program yang dijalankan hanya `git`, dengan subcommand read-only yang sudah tetap, dan
   ripgrep. Keduanya menerima array argumen, tidak pernah lewat shell, dan environment tanpa rahasia.
   Satu-satunya pengecualian harus dinyalakan sendiri: dengan `ALLOW_BRANCH_SWITCH`, `switch_branch`
-  menjalankan satu `git switch` yang sudah tetap ke branch lokal yang ada, tanpa jaringan, tanpa
-  hook, dan tanpa force.
+  menjalankan satu `git switch` yang sudah tetap ke branch lokal, atau ke branch remote yang sudah
+  di-fetch, tanpa jaringan, tanpa hook, dan tanpa force.
 - **Path dikurung.** Path absolut, `../`, dan symlink yang keluar dari repo ditolak, baik sebelum
   maupun sesudah path aslinya di-resolve. `.git/` tidak bisa dibaca.
 - **Rahasia tetap tersembunyi.** Yang berikut tidak pernah ditampilkan, di-index, dicari, dibaca,
