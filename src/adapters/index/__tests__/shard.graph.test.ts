@@ -18,7 +18,11 @@ beforeAll(async () => {
   open = await loadSqlite();
 });
 
-afterEach(() => rmSync(dir, { recursive: true, force: true }));
+/* Bun 1.3 on Windows panics on rmSync(''): only remove a folder a test made. */
+afterEach(() => {
+  if (dir) rmSync(dir, { recursive: true, force: true });
+  dir = '';
+});
 
 function record(path: string, content: string, extra: Partial<FileRecord> = {}): FileRecord {
   return {
