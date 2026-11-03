@@ -11,15 +11,17 @@ formatter.
 ## Eval: does the answer point at the right code?
 
 `bun run eval` builds a git workspace from the six fixture services in `tests/fixtures/repos/`
-(Java, Go, Node, Python, .NET, proto) and runs the 20 scenarios in
+(Java, Go, Node, Python, .NET, proto) and runs the 24 scenarios in
 `tests/fixtures/eval/fixture-scenarios.json`. Each scenario names a tool call and the file (and
 line, ±3) a good answer must reach within its first _k_ references.
 
 | Scenarios | hit@1 | hit@k | Mean tokens per answer | p50 ms | p95 ms |
 | --------- | ----- | ----- | ---------------------- | ------ | ------ |
-| 20        | 85%   | 100%  | 131                    | 1      | 18     |
+| 24        | 71%   | 100%  | 132                    | 1      | 3      |
 
-Measured 2026-10-14, version 2.0.0, Bun 1.3.12, Apple M5.
+Measured 2026-11-03, version 2.2.1 plus the call graph, Bun 1.4.4. The 20 scenarios from before
+score as they did on 2026-10-14 (85% at rank 1, 130 tokens); the four call-graph scenarios hit at
+rank 2, since a callers or callees answer names the definition itself first.
 
 | Kind of task                                                              | Scenarios | Example                                              |
 | ------------------------------------------------------------------------- | --------- | ---------------------------------------------------- |
@@ -28,6 +30,7 @@ Measured 2026-10-14, version 2.0.0, Bun 1.3.12, Apple M5.
 | Stack trace to frame (JVM, Python, Node)                                  | 3         | `triage_error` with a pasted trace                   |
 | Log line to the statement (Java, Go wrapped errors, Python logger prefix) | 3         | `triage_error "ERROR app.consumer Failed to send …"` |
 | Route, caller, topic, gRPC method                                         | 5         | `find_endpoint "POST /api/orders/42/cancel"`         |
+| Callers and callees (Java, TypeScript)                                    | 4         | `find_symbol "OrderService.cancel"` mode `callers`   |
 | Failing URL                                                               | 1         | `triage_error "POST /api/orders/42/cancel"`          |
 
 The three tasks that miss at rank 1 are found at rank 2:
@@ -59,6 +62,11 @@ answer size of nine typical calls across every repo at once.
 | [spring-petclinic/spring-petclinic-microservices](https://github.com/spring-petclinic/spring-petclinic-microservices) | `1d76b00` | 200   |
 
 **Machine:** Apple M5, 10 cores, 24 GB, macOS; Bun 1.3.12; bundled ripgrep 15.
+
+> **Not yet re-measured with the call graph.** The tables below predate it. Measured on 369 private
+> Java repos (202 MB of source) on 2026-11-03: the index grew from 163 MB to 237 MB (+45%) and the
+> first full build from 14.5 s to 17.2 s (+19%); a `callers` answer took 15–80 ms and a `callees`
+> answer 90–380 ms with every shard open. Re-run the corpus below before the next release.
 
 ### 4 repos (×1)
 

@@ -2,7 +2,7 @@
 # CI (self-test.yml, Node runtime job): the locked-down Windows laptop path. Runs on Node without
 # Bun and, with CODEBASE_NO_RIPGREP=1, without ripgrep. Writes a config for three fixture repos,
 # builds their index (worker threads, node:sqlite), boots the HTTP server, runs `bun run check`'s
-# script against it, and calls three tools over HTTP the way ClickUp does.
+# script against it, and calls four tools over HTTP the way ClickUp does (one in callers mode).
 #
 #   CODEBASE_NO_RIPGREP=1 bash scripts/ci/node-runtime.sh
 set -euo pipefail
@@ -76,4 +76,5 @@ expect_in() {
 expect_in search_code '{"query":"Order already cancelled"}' 'OrderService.java'
 expect_in find_symbol '{"name":"Refund"}' 'handler.go'
 expect_in find_endpoint '{"query":"POST /api/payments/77/refund"}' 'PaymentClient.java'
-echo "Node runtime: index, boot, search, symbols and endpoints work without Bun and without ripgrep."
+expect_in find_symbol '{"name":"OrderService.cancel","mode":"callers"}' 'OrderController.java:23'
+echo "Node runtime: index, boot, search, symbols, endpoints and the call graph work without Bun and without ripgrep."

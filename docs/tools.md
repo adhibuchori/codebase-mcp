@@ -125,15 +125,16 @@ Binary files, files over `limits.maxFileBytes`, sensitive names, and paths that 
 
 ## find_symbol
 
-Definitions by name, from the symbol index.
+Definitions by name, from the symbol index, every use of a name, or the call graph around one
+definition.
 
-| Argument         | Default       | Meaning                                                                        |
-| ---------------- | ------------- | ------------------------------------------------------------------------------ |
-| `name`           | required      | The name, or part of it                                                        |
-| `kind`           | any           | `class`, `interface`, `method`, `function`, `type`, `enum`, `struct`, `module` |
-| `mode`           | `definitions` | `definitions`, or `references` for every whole-word use                        |
-| `repos`, `group` | every repo    | Narrow the search                                                              |
-| `limit`          | 20            | Results (1–100)                                                                |
+| Argument         | Default       | Meaning                                                                                  |
+| ---------------- | ------------- | ---------------------------------------------------------------------------------------- |
+| `name`           | required      | The name, or part of it; `Class.method` picks one definition for `callers` and `callees` |
+| `kind`           | any           | `class`, `interface`, `method`, `function`, `type`, `enum`, `struct`, `module`           |
+| `mode`           | `definitions` | `definitions`, `references` (every whole-word use), `callers` or `callees`               |
+| `repos`, `group` | every repo    | Narrow the search (for `callers` and `callees`: where uses are looked for)               |
+| `limit`          | 20            | Results (1–100)                                                                          |
 
 The search tries exact names first, then prefixes, then substrings. Within one step, the order is:
 
@@ -152,6 +153,42 @@ method PaymentClient.refund — orders-java/src/main/java/com/acme/orders/client
 ```
 
 Repos whose index is not ready yet are named in the answer, never silently skipped.
+
+### Callers and callees
+
+`callers` lists every call, JSX render, construction (`new`) and, for a type, every subclass or
+implementation, across every repo. `callees` lists what a definition calls and where each callee is
+defined. Up to three definitions with the name are answered at once; with more, the answer lists
+them and asks for `Class.method`.
+
+```text
+Callers of CardRefunds.refund (orders-java/src/…/billing/CardRefunds.java:4-6): 1 exact, 1 likely, 1 name
+  exact   orders-java/src/…/jobs/Settlement.java:9 · in Settlement.settle · refunds.refund · via Refunds
+  likely  orders-java/src/…/jobs/RefundJob.java:9 · in RefundJob.run · card.refund
+  name    orders-java/src/…/jobs/RefundJob.java:11 · in RefundJob.run · handle.refund
+```
+
+How sure each line is:
+
+| Mark     | Meaning                                                                                                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exact`  | The receiver's declared type, or the import the name came from, resolves to the definition. Includes a call through an interface or superclass (`via Refunds`) and an inherited call (`via inherited`). |
+| `likely` | A wildcard import leaves the package open, a path alias (`@/api/payments`) or a package named after another repo, a top-level function, or a Swift type used in another repo.                           |
+| `name`   | Same name, receiver type unknown (a variable without a declared type, another language). Check it before relying on it.                                                                                 |
+
+How names resolve, per language:
+
+| Language                                               | Resolved through                                                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Java, Kotlin                                           | package, imports (wildcards are open), java.lang, declared types of fields, parameters and variables |
+| JavaScript, TypeScript, TSX                            | the module an import or `require` names; declared types (TypeScript); JSX elements are renders       |
+| Swift                                                  | type names, which a module sees without imports; `self.x`; a capitalised call constructs             |
+| Go, Python, C#, PHP, Ruby, Rust, Scala, C, C++, Elixir | by name only, from each grammar's tags query                                                         |
+
+What it cannot see: calls through reflection or dependency injection by name, and code that exists
+only after a build (Lombok getters, generated clients). `callees` reports those as having no source
+definition. The index keeps neither calls on chains (`a.find().orElseThrow()`) nor calls into the
+Java and Kotlin standard libraries.
 
 ## triage_error
 
@@ -240,10 +277,10 @@ every branch as `origin/…`); switching to the latter creates its local branch 
 one repo (`1` for every repo, or names separated by commas). It is the only tool that changes
 anything (`readOnlyHint: false`, `destructiveHint: false`).
 
-| Argument | Default  | Meaning                                                |
-| -------- | -------- | ------------------------------------------------------ |
-| `repo`   | required | Repo name                                              |
-| `branch` | none     | `develop` or `origin/develop`; leave it out to list    |
+| Argument | Default  | Meaning                                             |
+| -------- | -------- | --------------------------------------------------- |
+| `repo`   | required | Repo name                                           |
+| `branch` | none     | `develop` or `origin/develop`; leave it out to list |
 
 ```text
 payments-clone: on main, 1 local branch.

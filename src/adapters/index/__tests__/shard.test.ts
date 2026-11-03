@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, test } from 'bun:test';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { EMPTY_GRAPH } from '../../../core/graph/file-graph.ts';
 import type { Repo } from '../../../core/model/domain.types.ts';
 import { trigramMatch } from '../../../core/query/trigrams.ts';
 import type { FileRecord, IndexStatus } from '../../../ports/index-store.ts';
@@ -30,6 +31,7 @@ function record(path: string, content: string, extra: Partial<FileRecord> = {}):
     content,
     symbols: [],
     routes: [],
+    graph: EMPTY_GRAPH,
     ...extra,
   };
 }

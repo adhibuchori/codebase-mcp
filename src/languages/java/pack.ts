@@ -1,7 +1,7 @@
 /**
  * The Java language pack: regex symbols for when the grammar is unavailable, Spring, JAX-RS, Feign
- * and messaging routes, the JVM build files that reveal a framework, and the logger and throw calls
- * that rank log-source candidates.
+ * and messaging routes, the JVM build files that reveal a framework, the logger and throw calls
+ * that rank log-source candidates, and a call graph that resolves names to qualified types.
  */
 import type { LanguagePack } from '../../core/model/language-pack.types.ts';
 import { jvmMessaging } from '../jvm/messaging.ts';
@@ -60,4 +60,5 @@ export const javaPack: LanguagePack = {
   ],
   logCall:
     /\b(?:log|logger|LOG|LOGGER)\s*\.\s*(?:trace|debug|info|warn|error)\s*\(|\bthrow\s+new\s+[\w.]+\s*\(/,
+  graph: { queries: ['java'], imports: 'packages' },
 };

@@ -122,12 +122,41 @@ pack, both vendored in `assets/`. It turns the captures into definitions with ra
 
 The parser falls back to the pack's regex patterns when:
 
-- the grammar is missing or fails to load (Dart);
-- the language has no grammar (Swift);
+- the language has no grammar (Dart);
+- the grammar fails to load;
 - the file is larger than 512 KB, or minified.
 
 Grammar versions are pinned in `scripts/grammars/grammars.ts`, and `bun run grammars:sync`
-refreshes them along with their checksums.
+refreshes them along with their checksums. Swift's package ships no `.wasm`, so the sync builds it
+with the tree-sitter CLI (`buildWithCli`).
+
+## Call graph
+
+The indexer parses each file once for its symbols and its graph. A pack with a `graph` spec runs
+its own query from `assets/queries/graph/` (Java, Kotlin, JavaScript, TypeScript, TSX, Swift); any
+other grammar yields its calls by name from the tags query.
+
+1. **Index time, one file** (`src/core/graph/file-graph.ts`, pure). From the captures it collects the
+   package, the imports, the declared types of fields, parameters and variables (scoped by the
+   symbol tree), and every call, JSX render, construction and supertype, each with the definition
+   it sits in. Each name is resolved as far as the file can tell, into a **scope**:
+   - packages (Java, Kotlin): the qualified type, through imports, the package and java.lang; a
+     wildcard import leaves it open (`?Type`);
+   - modules (JavaScript, TypeScript): the import specifier the name came from (`./api#Api` for a
+     method of an imported class);
+   - types (Swift): the bare type name, since a module sees its types without imports.
+2. **Storage.** Refs go into the shard with their texts interned in `strings` and their definition
+   as a symbol id. Imports are not stored: they are already folded into the scopes. Calls on chains
+   and into the Java and Kotlin standard libraries are dropped; they could never resolve.
+3. **Query time** (`src/core/graph/judge.ts`, pure). `callers` reads every use of the name from
+   every shard and judges each against the target: the same qualified type, a supertype of the
+   target's class (a call through an interface), or a subclass calling an inherited method is
+   exact; an open package, a path alias or a package named after another repo is likely; an unknown
+   receiver is a match by name. `callees` resolves each use of a definition the other way round,
+   asking only the repos that define the use's type (`src/engine/callee-repos.ts`).
+
+Nothing is built and nothing is downloaded, so code that exists only after a build (Lombok
+getters, generated clients) has no definition to point at.
 
 ## Debugging tools
 

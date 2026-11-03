@@ -1,9 +1,11 @@
 /**
- * Everything the index stores about one text file: language, kind flags, line count, symbols and
- * routes. Generated, vendored and minified files are searchable but get no symbols or routes, so
- * they never outrank the code that people wrote.
+ * Everything the index stores about one text file: language, kind flags, line count, symbols, call
+ * graph and routes. Generated, vendored and minified files are searchable but get no symbols, graph
+ * or routes, so they never outrank the code that people wrote.
  */
+import { EMPTY_GRAPH } from '../core/graph/file-graph.ts';
 import type { RouteDef, SymbolDef } from '../core/model/domain.types.ts';
+import type { FileGraph } from '../core/model/graph.types.ts';
 import {
   classifyPath,
   FLAG_GENERATED,
@@ -18,6 +20,7 @@ export interface Analysis {
   readonly flags: number;
   readonly symbols: readonly SymbolDef[];
   readonly routes: readonly RouteDef[];
+  readonly graph: FileGraph;
 }
 
 export interface AnalyzeDeps {
@@ -54,13 +57,15 @@ export async function analyzeFile(
     !pack ||
     (flags & (FLAG_GENERATED | FLAG_VENDOR)) !== 0 ||
     text.length / Math.max(1, lines) > 400;
-  if (skip) return { lang: pack?.id ?? 'text', lines, flags, symbols: [], routes: [] };
-  const symbols = await deps.parser.parse(pack, text);
+  if (skip)
+    return { lang: pack?.id ?? 'text', lines, flags, symbols: [], routes: [], graph: EMPTY_GRAPH };
+  const { symbols, graph } = await deps.parser.analyze(pack, text);
   return {
     lang: pack.id,
     lines,
     flags,
     symbols,
     routes: routesOf(pack.routeExtractors ?? [], text),
+    graph,
   };
 }

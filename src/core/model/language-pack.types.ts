@@ -3,6 +3,7 @@
  * src/languages/ that exports a LanguagePack; nothing in core/ or engine/ changes.
  */
 import type { ParsedTrace, RouteDef } from './domain.types.ts';
+import type { ImportStyle } from './graph.types.ts';
 
 /** A regular expression whose first capture group is the symbol name (tier 3 fallback). */
 export interface SymbolPattern {
@@ -20,6 +21,15 @@ export interface FrameworkRule {
 export type RouteExtractor = (text: string) => RouteDef[];
 export type StackParser = (text: string) => ParsedTrace | null;
 
+/**
+ * The call graph of a language with a grammar: the query parts under assets/queries/graph/, joined
+ * in order, and how its imports name other files.
+ */
+interface GraphSpec {
+  readonly queries: readonly string[];
+  readonly imports: ImportStyle;
+}
+
 export interface LanguagePack {
   readonly id: string;
   readonly name: string;
@@ -34,4 +44,6 @@ export interface LanguagePack {
   readonly frameworks?: readonly FrameworkRule[];
   /** Matches the source line of a log or throw statement, used to rank log-source candidates. */
   readonly logCall?: RegExp;
+  /** Without it, a grammar's tags query still yields calls, matched by name only. */
+  readonly graph?: GraphSpec;
 }

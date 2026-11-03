@@ -4,6 +4,7 @@
  * second run over an unchanged repo reads no file content at all.
  */
 import { chunk, mapLimit } from '../core/async/map-limit.ts';
+import { EMPTY_GRAPH } from '../core/graph/file-graph.ts';
 import type { Repo } from '../core/model/domain.types.ts';
 import { looksBinary } from '../core/text/lines.ts';
 import type { FileSystem } from '../ports/file-system.ts';
@@ -23,7 +24,14 @@ export interface IndexRepoDeps {
 }
 
 const BATCH = 200;
-const EMPTY: Analysis = { lang: 'binary', lines: 0, flags: 0, symbols: [], routes: [] };
+const EMPTY: Analysis = {
+  lang: 'binary',
+  lines: 0,
+  flags: 0,
+  symbols: [],
+  routes: [],
+  graph: EMPTY_GRAPH,
+};
 
 export function fingerprint(entry: Pick<InventoryEntry, 'size' | 'mtimeMs'>): string {
   return `${entry.size}:${entry.mtimeMs}`;

@@ -7,6 +7,7 @@ import type {
   SymbolDef,
   SymbolHit,
 } from '../core/model/domain.types.ts';
+import type { FileGraph, RefHit, RefKind } from '../core/model/graph.types.ts';
 
 type IndexState = 'missing' | 'queued' | 'indexing' | 'ready' | 'failed';
 
@@ -48,6 +49,18 @@ export interface IndexReader {
   symbolsInFile(repo: Repo, path: string): readonly SymbolDef[] | null;
   findSymbols(repo: Repo, query: SymbolQuery): readonly SymbolHit[];
   routes(repo: Repo, kinds: readonly RouteKind[]): readonly RouteHit[];
+  /** Uses of a name (calls, renders, constructions, type relations), at most `limit`. */
+  refsNamed(repo: Repo, query: RefQuery): readonly RefHit[];
+  /** The uses inside one definition ("Class.method"), or a type's relations. */
+  refsFrom(repo: Repo, path: string, origin: string): readonly RefHit[];
+  /** A file's package ("" outside Java and Kotlin); null when the file is not indexed. */
+  filePackage(repo: Repo, path: string): string | null;
+}
+
+export interface RefQuery {
+  readonly name: string;
+  readonly kinds: readonly RefKind[];
+  readonly limit: number;
 }
 
 /** Everything the indexer stores about one file. */
@@ -62,6 +75,7 @@ export interface FileRecord {
   readonly content: string;
   readonly symbols: readonly SymbolDef[];
   readonly routes: readonly RouteDef[];
+  readonly graph: FileGraph;
 }
 
 export interface IndexWriter {
