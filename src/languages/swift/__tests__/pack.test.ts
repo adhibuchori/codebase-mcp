@@ -1,17 +1,18 @@
-/** The Swift pack: no grammar, so its regexes are the whole outline; Vapor and log lines too. */
+/** The Swift pack: a grammar with a call graph, regexes as the fallback, Vapor and log lines. */
 import { describe, expect, test } from 'bun:test';
 import { regexSymbols } from '../../../core/symbols/regex-symbols.ts';
 import { swiftPack } from '../pack.ts';
 
 describe('swiftPack', () => {
-  test('is tier 3 without a grammar', () => {
+  test('is tier 2 with a grammar and a call graph by type', () => {
     expect(swiftPack).toMatchObject({
       id: 'swift',
       name: 'Swift',
-      tier: 3,
+      tier: 2,
       extensions: ['.swift'],
+      grammar: 'swift',
+      graph: { queries: ['swift'], imports: 'types' },
     });
-    expect(swiftPack.grammar).toBeUndefined();
   });
 
   test('finds declarations behind attributes and modifiers', () => {

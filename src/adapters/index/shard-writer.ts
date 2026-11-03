@@ -1,10 +1,11 @@
 /**
- * IndexWriter on a repo shard. A changed file's old rows (content, symbols, names, routes) are
- * deleted before the new ones go in, all inside one transaction per batch, so a reader never sees a
+ * IndexWriter on a repo shard. A changed file's old rows (content, symbols, names, routes, refs)
+ * are deleted before the new ones go in, all inside one transaction per batch, so a reader never sees a
  * half-written file.
  */
 import type { FileRecord, IndexWriter } from '../../ports/index-store.ts';
 import { int, text } from './rows.ts';
+import { saveGraph } from './shard-graph-writer.ts';
 import { ensureSchema } from './shard-schema.ts';
 import type { OpenSqlite, SqlDb } from './sqlite.ts';
 
@@ -27,22 +28,30 @@ function clearFile(db: SqlDb, id: number): void {
   ]);
   db.run('DELETE FROM symbols WHERE file_id = ?', [id]);
   db.run('DELETE FROM routes WHERE file_id = ?', [id]);
+  db.run('DELETE FROM refs WHERE file_id = ?', [id]);
 }
 
 function saveFile(db: SqlDb, record: FileRecord): number {
   const existing = int(db.get('SELECT id FROM files WHERE path = ?', [record.path]), 'id');
   if (existing > 0) clearFile(db, existing);
-  const values = [record.fingerprint, record.size, record.lang, record.lines, record.flags];
+  const values = [
+    record.fingerprint,
+    record.size,
+    record.lang,
+    record.lines,
+    record.flags,
+    record.graph.pkg,
+  ];
   if (existing > 0) {
     db.run(
-      'UPDATE files SET fingerprint = ?, size = ?, lang = ?, lines = ?, flags = ? WHERE id = ?',
+      'UPDATE files SET fingerprint = ?, size = ?, lang = ?, lines = ?, flags = ?, pkg = ? WHERE id = ?',
       [...values, existing],
     );
     return existing;
   }
   const name = record.path.slice(record.path.lastIndexOf('/') + 1);
   const row = db.get(
-    'INSERT INTO files (path, name, fingerprint, size, lang, lines, flags) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+    'INSERT INTO files (path, name, fingerprint, size, lang, lines, flags, pkg) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
     [record.path, name, ...values],
   );
   return int(row, 'id');
@@ -50,12 +59,15 @@ function saveFile(db: SqlDb, record: FileRecord): number {
 
 function saveDetails(db: SqlDb, id: number, record: FileRecord): void {
   db.run('INSERT INTO content (rowid, body) VALUES (?, ?)', [id, record.content]);
+  const symbolIds = new Map<string, number>();
   for (const s of record.symbols) {
     const row = db.get(
       'INSERT INTO symbols (file_id, name, kind, line, end_line, container, signature) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
       [id, s.name, s.kind, s.line, s.endLine, s.container, s.signature],
     );
     db.run('INSERT INTO symbol_names (rowid, name) VALUES (?, ?)', [int(row, 'id'), s.name]);
+    const qualified = s.container ? `${s.container}.${s.name}` : s.name;
+    if (!symbolIds.has(qualified)) symbolIds.set(qualified, int(row, 'id'));
   }
   for (const r of record.routes) {
     db.run(
@@ -63,6 +75,7 @@ function saveDetails(db: SqlDb, id: number, record: FileRecord): void {
       [id, r.kind, r.role, r.method, r.pattern, r.line, r.framework],
     );
   }
+  saveGraph(db, { id, graph: record.graph }, symbolIds);
 }
 
 export function openShardWriter(open: OpenSqlite, path: string): IndexWriter {

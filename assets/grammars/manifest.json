@@ -3,7 +3,7 @@
     "pkg": "tree-sitter-java",
     "version": "0.23.5",
     "sha256": "4fdeac4ca6ca089f06c6f7e562abcac1733cd465728cc7031ebb73c2019122c4",
-    "query": "packaged"
+    "query": "own"
   },
   "kotlin": {
     "pkg": "@tree-sitter-grammars/tree-sitter-kotlin",
@@ -88,5 +88,11 @@
     "version": "0.3.5",
     "sha256": "ed99093c548c12d43f7e337fd3440e9e2daa2ec671a5e29aadb6c6dcb2232a62",
     "query": "packaged"
+  },
+  "swift": {
+    "pkg": "tree-sitter-swift",
+    "version": "0.7.1",
+    "sha256": "24a6afb13db61ffd7d53dd848bbf684ec1c3aacea685a0857dcd1db673d28c7e",
+    "query": "own"
   }
 }

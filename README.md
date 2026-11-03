@@ -50,6 +50,10 @@ behind, a search can miss a line you just wrote, but it never shows you an old o
 - **Built for debugging microservices.** Paste a stack trace, a log line or a failing URL and get
   the code behind it. Follow an HTTP route, a gRPC method or a Kafka topic to its handler and its
   callers in other services.
+- **Follows calls across repos.** `find_symbol` in `callers` or `callees` mode answers "who calls
+  this?" and "what does this call?" for Java, Kotlin, TypeScript and JavaScript (with JSX), and
+  Swift, from the source alone. Names resolve through declared types and imports, so two `cancel`
+  methods in different classes stay apart, and every line says whether it is exact or a guess.
 - **Fast across hundreds of repos.** A per-repo trigram index narrows every search to the files
   that can match. ripgrep then reads only those files. Measured: 200 repos (1.8 GB) answer a search
   in under 0.4 s.
@@ -84,18 +88,18 @@ Nine read-only tools, plus `switch_branch` when you turn it on (see
 [switching branches](#switching-branches)). Answers are plain text. Every location is written as `repo/path:line`,
 and `read_code` takes that same form, so a result can be opened straight away.
 
-| Tool            | Use it to                                                                                                                                | Example input                                                           |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `list_repos`    | See every service: languages, frameworks, endpoints, topics, last commit, index state. Filter by name, group or language.                | `{"query": "order"}`                                                    |
-| `repo_overview` | Map one repo: build files, entrypoints, endpoints, topics and folders with file counts.                                                  | `{"repo": "orders", "path": "src/main"}`                                |
-| `search_code`   | Search text in every repo at once, ranked and grouped by file, with the enclosing function. Modes: `literal` (default), `word`, `regex`. | `{"query": "Order already cancelled"}`                                  |
-| `find_files`    | Find files by fuzzy name or path ("ordctl" finds `OrderController.java`).                                                                | `{"query": "order controller"}`                                         |
-| `read_code`     | Read one function (`#Class.method`), a line (`:120`), a range (`:120-180`), a small file, or the outline of a large one.                 | `{"ref": "orders/src/…/OrderService.java#cancel"}`                      |
-| `find_symbol`   | Jump to a definition by name (exact, then prefix, then substring), or list every reference.                                              | `{"name": "OrderService"}`                                              |
-| `triage_error`  | Paste a stack trace, log line, error message or URL; get the code behind it.                                                             | `{"text": "java.lang.IllegalStateException: …"}`                        |
-| `find_endpoint` | Follow a request: HTTP route to handler and callers, gRPC method to proto and implementation, topic to producers and consumers.          | `{"query": "POST /api/orders/42/cancel"}`                               |
-| `git_history`   | Recent commits, when a string appeared (pickaxe), blame, and one commit's diff.                                                          | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
-| `switch_branch` | Opt-in (`ALLOW_BRANCH_SWITCH`). List a repo's branches, or switch it to a local or already fetched one; never fetches.               | `{"repo": "orders", "branch": "develop"}`                               |
+| Tool            | Use it to                                                                                                                                                       | Example input                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `list_repos`    | See every service: languages, frameworks, endpoints, topics, last commit, index state. Filter by name, group or language.                                       | `{"query": "order"}`                                                    |
+| `repo_overview` | Map one repo: build files, entrypoints, endpoints, topics and folders with file counts.                                                                         | `{"repo": "orders", "path": "src/main"}`                                |
+| `search_code`   | Search text in every repo at once, ranked and grouped by file, with the enclosing function. Modes: `literal` (default), `word`, `regex`.                        | `{"query": "Order already cancelled"}`                                  |
+| `find_files`    | Find files by fuzzy name or path ("ordctl" finds `OrderController.java`).                                                                                       | `{"query": "order controller"}`                                         |
+| `read_code`     | Read one function (`#Class.method`), a line (`:120`), a range (`:120-180`), a small file, or the outline of a large one.                                        | `{"ref": "orders/src/…/OrderService.java#cancel"}`                      |
+| `find_symbol`   | Jump to a definition by name (exact, then prefix, then substring), list every reference, or walk the call graph: who calls it, and what it calls, across repos. | `{"name": "OrderService.cancel", "mode": "callers"}`                    |
+| `triage_error`  | Paste a stack trace, log line, error message or URL; get the code behind it.                                                                                    | `{"text": "java.lang.IllegalStateException: …"}`                        |
+| `find_endpoint` | Follow a request: HTTP route to handler and callers, gRPC method to proto and implementation, topic to producers and consumers.                                 | `{"query": "POST /api/orders/42/cancel"}`                               |
+| `git_history`   | Recent commits, when a string appeared (pickaxe), blame, and one commit's diff.                                                                                 | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
+| `switch_branch` | Opt-in (`ALLOW_BRANCH_SWITCH`). List a repo's branches, or switch it to a local or already fetched one; never fetches.                                          | `{"repo": "orders", "branch": "develop"}`                               |
 
 A debugging session in ClickUp Brain often looks like this:
 
@@ -246,7 +250,7 @@ serve.
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | Another config file.                                                                                                                            |
 | `REPOS`                                                        | none                     | `name=path;name=path`. When set, exactly these repos are served (the config's `roots`/`repos` are skipped). Restart `bun start` after a change. |
 | `EXTRA_BLOCKED`                                                | none                     | Extra regexes for file names that must never be read, comma-separated.                                                                          |
-| `ALLOW_BRANCH_SWITCH`                                          | off                      | `1` (every repo) or repo names, comma-separated: adds `switch_branch`. See [switching branches](#switching-branches). |
+| `ALLOW_BRANCH_SWITCH`                                          | off                      | `1` (every repo) or repo names, comma-separated: adds `switch_branch`. See [switching branches](#switching-branches).                           |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | bundled ripgrep          | Another ripgrep binary, or `1` to force the JavaScript scanner.                                                                                 |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn` or `error`. See [Reading the logs](#reading-the-logs).                                                                  |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | per platform             | Tunnel settings for `bun tunnel`.                                                                                                               |
@@ -387,12 +391,12 @@ For Cursor or another client, the command is `bun` with the arguments
 
 ## Supported languages and frameworks
 
-| Tier                 | Languages                                               | What you get                                                                                                   |
-| -------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 1                    | Java, Kotlin, Go, TypeScript and JavaScript, Python, C# | tree-sitter symbols, stack traces, log statements, and HTTP, gRPC and topic extraction for the main frameworks |
-| 2                    | PHP, Ruby, Rust, Scala, C, C++, Elixir                  | tree-sitter symbols, plus stack traces and routes for PHP, Ruby and Elixir                                     |
-| 3                    | Swift, Dart, and any other text file                    | search, plus symbols from line patterns                                                                        |
-| Contracts and config | `.proto`, YAML, JSON, SQL, Dockerfile, Makefile, …      | search; gRPC services from `.proto`; SQL tables                                                                |
+| Tier                 | Languages                                               | What you get                                                                                                                                                                                                                 |
+| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1                    | Java, Kotlin, Go, TypeScript and JavaScript, Python, C# | tree-sitter symbols, stack traces, log statements, and HTTP, gRPC and topic extraction for the main frameworks; a call graph resolved by type and import for Java, Kotlin, TypeScript and JavaScript, by name for the others |
+| 2                    | Swift, PHP, Ruby, Rust, Scala, C, C++, Elixir           | tree-sitter symbols, plus stack traces and routes for PHP, Ruby and Elixir; a call graph resolved by type for Swift, by name for the others                                                                                  |
+| 3                    | Dart, and any other text file                           | search, plus symbols from line patterns                                                                                                                                                                                      |
+| Contracts and config | `.proto`, YAML, JSON, SQL, Dockerfile, Makefile, …      | search; gRPC services from `.proto`; SQL tables                                                                                                                                                                              |
 
 | Kind          | Frameworks found                                                                                                                                                                                                            |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

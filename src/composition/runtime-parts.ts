@@ -5,7 +5,7 @@ import { isAbsolute, join } from 'node:path';
 import { createInventory } from '../adapters/fs/inventory.ts';
 import { createGitReader, listGitFiles } from '../adapters/git/git-reader.ts';
 import { createGitSwitcher } from '../adapters/git/git-switcher.ts';
-import { createShardPool, type ShardPool } from '../adapters/index/shard-pool.ts';
+import { createShardPool, shardPoolSize, type ShardPool } from '../adapters/index/shard-pool.ts';
 import { loadSqlite } from '../adapters/index/sqlite.ts';
 import { createTreeSitterParser } from '../adapters/parse/tree-sitter-parser.ts';
 import { createWorkerRunner } from '../adapters/runtime/worker-pool.ts';
@@ -79,7 +79,7 @@ export async function createIndexing(input: {
     /* With the index off, shards left by an earlier run are never refreshed, so they are not read either. */
     exists: input.config.index.enabled ? existsSync : () => false,
     liveStatus: (slug) => holder.coordinator?.live(slug),
-    maxOpen: 48,
+    maxOpen: shardPoolSize(input.registry.list().length),
   });
   const runner = await makeRunner(input.options, settings, input.logger);
   const coordinator = createCoordinator({

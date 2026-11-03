@@ -3,6 +3,7 @@
  * Refreshes assets/grammars/*.wasm and assets/queries/*.scm from the npm packages pinned in
  * grammars.ts, and records each file's SHA-256 in assets/grammars/manifest.json. Run it after
  * changing a version; commit the result. Needs npm and tar (both ship with Node and Windows 10+).
+ * A package without a .wasm (Swift) is built with the tree-sitter CLI, run through npx.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -43,6 +44,24 @@ function unpack(pkg: string, version: string): string {
   return folder;
 }
 
+/** Copies the packaged .wasm, or builds it from the package's sources. */
+function placeWasm(grammar: (typeof GRAMMARS)[number], target: string): void {
+  const folder = unpack(grammar.pkg, grammar.version);
+  if (!grammar.buildWithCli) {
+    cpSync(join(folder, grammar.wasm), target);
+    return;
+  }
+  execFileSync(
+    'npx',
+    ['-y', `tree-sitter-cli@${grammar.buildWithCli}`, 'build', '--wasm', '-o', target],
+    {
+      cwd: folder,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    },
+  );
+}
+
 const sha256 = (path: string): string =>
   createHash('sha256').update(readFileSync(path)).digest('hex');
 
@@ -53,7 +72,7 @@ const manifest: Record<string, { pkg: string; version: string; sha256: string; q
 try {
   for (const grammar of GRAMMARS) {
     const wasmTarget = join(grammarsDir, `${grammar.id}.wasm`);
-    cpSync(join(unpack(grammar.pkg, grammar.version), grammar.wasm), wasmTarget);
+    placeWasm(grammar, wasmTarget);
     const queryTarget = join(queriesDir, `${grammar.id}.scm`);
     if (grammar.queries.length > 0) {
       const text = grammar.queries

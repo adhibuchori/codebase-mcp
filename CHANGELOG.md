@@ -7,6 +7,30 @@ you have to act on. How a release is made: [RELEASING.md](RELEASING.md).
 
 ## [Unreleased]
 
+### Added
+
+- A call graph across every repo: `find_symbol` with mode `callers` lists who calls, renders or
+  constructs a definition, and mode `callees` what it calls. Name the definition as `Class.method`.
+  Each line says how sure it is: **exact** (resolved through declared types and imports, including
+  a call through an interface the class implements and an inherited call from a subclass),
+  **likely** (a wildcard import, a path alias, a package named after another repo, a top-level
+  function), or **name** (same name, receiver type unknown). Precise for Java, Kotlin, JavaScript,
+  TypeScript, TSX (JSX elements count as renders) and Swift; other languages with a grammar match
+  by name. Nothing is built or downloaded: it reads the source only.
+- Swift gets a tree-sitter grammar (built from tree-sitter-swift 0.7.1, vendored like the others):
+  symbols, outlines and the call graph. It moves from tier 3 to tier 2.
+
+### Changed
+
+- Java records and enums are symbols now, so their methods have a container
+  (`Order.isCancelled`).
+- The index keeps every repo's shard open (up to 512) instead of 48. With 369 repos, a callers
+  answer took 462 ms with 48 and 22 ms with every shard open (measured).
+- The index schema changed, so every shard is rebuilt once on the first start after the update. A
+  shard from the old schema is not read until it is rebuilt; `list_repos` shows it as not indexed
+  meanwhile. Shards grow by about 45% (measured on 369 Java repos: 163 MB to 237 MB) and the first
+  full index takes about 20% longer.
+
 ## [2.2.1] - 2026-10-19
 
 ### Fixed

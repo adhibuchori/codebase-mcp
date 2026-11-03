@@ -1,4 +1,7 @@
-/** find_symbol: definitions by name from the symbol index, or every reference to a name. */
+/**
+ * find_symbol: definitions by name from the symbol index, every reference to a name, or the call
+ * graph around a definition (callers, callees).
+ */
 import { z } from 'zod';
 import { takeBlocks } from '../../core/output/budget.ts';
 import { plural } from '../../core/output/trim.ts';
@@ -8,12 +11,13 @@ import { resolveRepos } from '../../engine/repo-scope.ts';
 import { findSymbolsIn } from '../../engine/symbols.ts';
 import { defineTool, type ToolContext } from '../registry/define-tool.ts';
 import { groupField, limitField, reposField } from '../registry/shared-input.ts';
+import { callGraph } from './call-graph.ts';
 import { findReferences } from './references.ts';
 
 interface SymbolArgs {
   readonly name: string;
   readonly kind?: string | undefined;
-  readonly mode: 'definitions' | 'references';
+  readonly mode: 'definitions' | 'references' | 'callers' | 'callees';
   readonly repos?: string[] | undefined;
   readonly group?: string | undefined;
   readonly limit: number;
@@ -52,18 +56,28 @@ export const findSymbolTool = defineTool({
   name: 'find_symbol',
   title: 'Find symbol',
   description:
-    'Finds where a class, function, method, interface or type is defined, across every repo, from the symbol index (exact name first, then prefix, then substring). Returns kind, Class.method, file and line range, and the signature. With mode "references" it lists every whole-word use of the name instead, grouped by file, without the definitions. Example: {"name": "OrderService"} or {"name": "cancelOrder", "mode": "references"}.',
+    'Finds where a class, function, method, interface or type is defined, across every repo, from the symbol index (exact name first, then prefix, then substring). Returns kind, Class.method, file and line range, and the signature. Mode "references" lists every whole-word use of the name; mode "callers" lists who calls, renders or constructs a definition across repos, and mode "callees" what it calls, each marked exact (resolved by type or import), likely, or name (same name only). Example: {"name": "OrderService"}, {"name": "OrderService.cancel", "mode": "callers"} or {"name": "cancelOrder", "mode": "references"}.',
   input: {
-    name: z.string().min(1).max(200).describe('Symbol name, or a part of it.'),
+    name: z
+      .string()
+      .min(1)
+      .max(200)
+      .describe(
+        'Symbol name or a part of it; Class.method picks one definition for callers and callees.',
+      ),
     kind: z
       .string()
       .optional()
       .describe('Only this kind: class, interface, method, function, type, enum, struct, module.'),
-    mode: z.enum(['definitions', 'references']).default('definitions'),
+    mode: z.enum(['definitions', 'references', 'callers', 'callees']).default('definitions'),
     repos: reposField,
     group: groupField,
     limit: limitField(20, 100),
   },
-  run: async (args, context) =>
-    args.mode === 'references' ? findReferences(args, context) : definitions(args, context),
+  run: async (args, context) => {
+    if (args.mode === 'references') return findReferences(args, context);
+    if (args.mode === 'callers' || args.mode === 'callees')
+      return callGraph({ ...args, mode: args.mode }, context);
+    return definitions(args, context);
+  },
 });

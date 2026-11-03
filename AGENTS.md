@@ -207,7 +207,9 @@ fixture repos in `tests/fixtures/` are exempt, since they mimic other stacks. En
 4. For a grammar:
    - add the npm package and its version to `scripts/grammars/grammars.ts`;
    - run `bun run grammars:sync`;
-   - add `assets/queries/<id>.scm` when the package has no `tags.scm`.
+   - add `assets/queries/<id>.scm` when the package has no `tags.scm`;
+   - for a call graph better than names, add `assets/queries/graph/<id>.scm` with the captures
+     `src/core/graph/file-graph.ts` reads, and `graph: { queries, imports }` in the pack.
 5. Tests in `src/languages/<id>/__tests__/`, at 100%. When the language matters for the eval, add a
    fixture repo in `tests/fixtures/repos/` and scenarios in
    `tests/fixtures/eval/fixture-scenarios.json`.

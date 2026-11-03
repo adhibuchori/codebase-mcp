@@ -40,4 +40,5 @@ export const kotlinPack: LanguagePack = {
   ],
   logCall:
     /\b(?:log|logger|LOG|LOGGER)\s*\.\s*(?:trace|debug|info|warn|error)\s*[({]|\bthrow\s+[\w.]+\s*\(/,
+  graph: { queries: ['kotlin'], imports: 'packages' },
 };

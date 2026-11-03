@@ -61,6 +61,7 @@ const SAMPLES: readonly [string, string, readonly string[]][] = [
   ['c', 'int run(void) {\n  return 0;\n}\n', ['run']],
   ['cpp', 'class A {\n  void run();\n};\n', ['A', 'A.run']],
   ['elixir', 'defmodule A do\n  def run, do: :ok\nend\n', ['A', 'A.run']],
+  ['swift', 'final class A {\n  func run() {}\n}\n', ['A', 'A.run']],
 ];
 
 test.each(SAMPLES)(
@@ -98,4 +99,48 @@ test('no grammar, huge files and minified files use the regex patterns', async (
       (s) => s.name,
     ),
   ).toEqual(['Big']);
+});
+
+const javaGraph = pack({ grammar: 'java', graph: { queries: ['java'], imports: 'packages' } });
+
+test('analyze returns symbols and the call graph from one parse', async () => {
+  const source =
+    'package com.acme;\nimport com.acme.pay.Client;\nclass Svc {\n  private Client client;\n  void run() {\n    client.pay();\n  }\n}\n';
+  const { symbols, graph } = await parser.analyze(javaGraph, source);
+  expect(symbols.map((s) => s.name)).toEqual(['Svc', 'run']);
+  expect(graph.pkg).toBe('com.acme');
+  expect(graph.imports).toEqual([{ local: 'Client', imported: 'Client', source: 'com.acme.pay' }]);
+  expect(graph.refs).toEqual([
+    {
+      kind: 'call',
+      name: 'pay',
+      receiver: 'client',
+      scope: 'com.acme.pay.Client',
+      line: 6,
+      origin: 'Svc.run',
+    },
+  ]);
+});
+
+test('without a graph query, calls come from the tags query by name; without a grammar, none', async () => {
+  const go = await parser.analyze(
+    pack({ grammar: 'go' }),
+    'package main\nfunc run() {\n  stop()\n}\n',
+  );
+  expect(go.graph.refs.map((r) => [r.name, r.scope, r.origin])).toEqual([['stop', '', 'run']]);
+  expect(
+    (await parser.analyze(pack({ symbolPatterns: fallback }), 'class P {}')).graph.refs,
+  ).toEqual([]);
+});
+
+test('a graph query that fails to load is logged once and calls fall back to names', async () => {
+  const broken = pack({
+    id: 'broken',
+    grammar: 'java',
+    graph: { queries: ['no-such-part'], imports: 'packages' },
+  });
+  const source = 'class A {\n  void run() {\n    go();\n  }\n}\n';
+  expect((await parser.analyze(broken, source)).graph.refs.map((r) => r.name)).toEqual(['go']);
+  await parser.analyze(broken, source);
+  expect(warnings.filter((line) => line.includes('graph query unavailable'))).toHaveLength(1);
 });

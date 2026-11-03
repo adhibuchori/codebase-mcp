@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test';
-import type { RouteDef } from '../../core/model/domain.types.ts';
+import { EMPTY_GRAPH } from '../../core/graph/file-graph.ts';
+import type { RouteDef, SymbolDef } from '../../core/model/domain.types.ts';
+import type { FileGraph } from '../../core/model/graph.types.ts';
 import type { LanguagePack } from '../../core/model/language-pack.types.ts';
 import { FLAG_GENERATED, FLAG_TEST } from '../../core/rank/classify.ts';
 import type { LanguageRegistry, SymbolParser } from '../../ports/runtime.ts';
@@ -33,22 +35,34 @@ const languages: LanguageRegistry = {
   parseTrace: () => null,
 };
 
-const parser: SymbolParser = {
-  parse: async () => [
-    { name: 'main', kind: 'function', line: 1, endLine: 2, container: '', signature: 'fn main' },
-  ],
+const MAIN: SymbolDef = {
+  name: 'main',
+  kind: 'function',
+  line: 1,
+  endLine: 2,
+  container: '',
+  signature: 'fn main',
+};
+const GRAPH: FileGraph = {
+  pkg: '',
+  imports: [],
+  refs: [{ kind: 'call', name: 'go', receiver: '', scope: '', line: 1, origin: 'main' }],
 };
 
-test('a source file gets symbols and routes; a failing extractor only loses its own routes', async () => {
+const parser: SymbolParser = {
+  parse: async () => [MAIN],
+  analyze: async () => ({ symbols: [MAIN], graph: GRAPH }),
+};
+
+test('a source file gets symbols, routes and its call graph; a failing extractor only loses its own routes', async () => {
   const analysis = await analyzeFile('src/app.toy', 'fn main\nend\n', { languages, parser });
   expect(analysis).toEqual({
     lang: 'toy',
     lines: 2,
     flags: 0,
-    symbols: [
-      { name: 'main', kind: 'function', line: 1, endLine: 2, container: '', signature: 'fn main' },
-    ],
+    symbols: [MAIN],
     routes: [ROUTE],
+    graph: GRAPH,
   });
 });
 
@@ -59,6 +73,7 @@ test('unknown, generated and minified files are indexed for search only', async 
     flags: 0,
     symbols: [],
     routes: [],
+    graph: EMPTY_GRAPH,
   });
   const generated = await analyzeFile(
     'src/gen.toy',

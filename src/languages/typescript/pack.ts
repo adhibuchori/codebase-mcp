@@ -1,7 +1,8 @@
 /**
  * TypeScript, tier 1: one tree-sitter grammar for .ts/.mts/.cts and another for .tsx. The regex
  * fallbacks add interfaces, enums, type aliases and namespaces to the JavaScript shapes; routes,
- * frameworks (from package.json) and log calls are the Node ones the JavaScript pack uses too.
+ * frameworks (from package.json) and log calls are the Node ones the JavaScript pack uses too. The
+ * call graph adds declared types to the JavaScript one, and JSX elements in .tsx.
  */
 import type { LanguagePack, SymbolPattern } from '../../core/model/language-pack.types.ts';
 import { nodeFrameworks, nodeLogCall } from '../node/frameworks.ts';
@@ -32,6 +33,7 @@ export const typescriptPack: LanguagePack = {
   name: 'TypeScript',
   extensions: ['.ts', '.mts', '.cts'],
   grammar: 'typescript',
+  graph: { queries: ['js-core', 'ts-types'], imports: 'modules' },
 };
 
 export const tsxPack: LanguagePack = {
@@ -40,4 +42,5 @@ export const tsxPack: LanguagePack = {
   name: 'TypeScript (TSX)',
   extensions: ['.tsx'],
   grammar: 'tsx',
+  graph: { queries: ['js-core', 'ts-types', 'jsx'], imports: 'modules' },
 };

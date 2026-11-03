@@ -7,6 +7,7 @@ import { createNodeFileSystem } from '../../adapters/fs/node-file-system.ts';
 import { openShardWriter } from '../../adapters/index/shard-writer.ts';
 import { createShardPool } from '../../adapters/index/shard-pool.ts';
 import { loadSqlite, type OpenSqlite } from '../../adapters/index/sqlite.ts';
+import { EMPTY_GRAPH } from '../../core/graph/file-graph.ts';
 import type { Repo } from '../../core/model/domain.types.ts';
 import { trigramMatch } from '../../core/query/trigrams.ts';
 import type { IndexWriter } from '../../ports/index-store.ts';
@@ -41,6 +42,7 @@ function setup(): { repo: Repo; deps: IndexRepoDeps; shard: string } {
         { name: 'Order', kind: 'class', line: 1, endLine: 1, container: '', signature: '' },
       ],
       routes: [],
+      graph: EMPTY_GRAPH,
     };
   };
   const deps: IndexRepoDeps = {

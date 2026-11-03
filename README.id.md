@@ -52,6 +52,11 @@ menampilkan baris lama.
 - **Dibuat untuk debugging microservices.** Tempel stack trace, baris log, atau URL yang gagal,
   lalu dapatkan kode di baliknya. Telusuri route HTTP, method gRPC, atau topic Kafka sampai ke
   handler dan pemanggilnya di service lain.
+- **Menelusuri pemanggilan lintas repo.** `find_symbol` dengan mode `callers` atau `callees`
+  menjawab "siapa yang memanggil ini?" dan "ini memanggil apa?" untuk Java, Kotlin, TypeScript dan
+  JavaScript (termasuk JSX), serta Swift, hanya dari source. Nama di-resolve lewat tipe yang
+  dideklarasikan dan import, jadi dua method `cancel` di class berbeda tidak tertukar, dan setiap
+  baris menyebut apakah hasilnya pasti atau tebakan.
 - **Cepat di ratusan repo.** Index trigram per repo mempersempit setiap pencarian ke file yang
   mungkin cocok, lalu ripgrep hanya membaca file itu. Hasil ukur: pencarian di 200 repo (1,8 GB)
   selesai di bawah 0,4 detik.
@@ -88,18 +93,18 @@ Ada sembilan tool read-only, ditambah `switch_branch` kalau Anda menyalakannya (
 [pindah branch](#pindah-branch)). Jawaban berupa teks biasa. Setiap lokasi ditulis sebagai
 `repo/path:line`, dan `read_code` menerima bentuk yang sama, jadi hasilnya bisa langsung dibuka.
 
-| Tool            | Gunakan untuk                                                                                                                                                        | Contoh input                                                            |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `list_repos`    | Melihat semua service: bahasa, framework, endpoint, topic, commit terakhir, status index. Filter berdasarkan nama, grup, atau bahasa.                                | `{"query": "order"}`                                                    |
-| `repo_overview` | Memetakan satu repo: file build, entrypoint, endpoint, topic, dan folder beserta jumlah filenya.                                                                     | `{"repo": "orders", "path": "src/main"}`                                |
-| `search_code`   | Mencari teks di semua repo sekaligus, berperingkat dan dikelompokkan per file, lengkap dengan fungsi yang melingkupinya. Mode: `literal` (default), `word`, `regex`. | `{"query": "Order already cancelled"}`                                  |
-| `find_files`    | Mencari file berdasarkan nama atau path secara fuzzy ("ordctl" menemukan `OrderController.java`).                                                                    | `{"query": "order controller"}`                                         |
-| `read_code`     | Membaca satu fungsi (`#Class.method`), satu baris (`:120`), rentang (`:120-180`), file kecil, atau outline file besar.                                               | `{"ref": "orders/src/…/OrderService.java#cancel"}`                      |
-| `find_symbol`   | Lompat ke definisi berdasarkan nama (exact, lalu prefix, lalu substring), atau daftar semua referensinya.                                                            | `{"name": "OrderService"}`                                              |
-| `triage_error`  | Tempel stack trace, baris log, pesan error, atau URL; dapatkan kode di baliknya.                                                                                     | `{"text": "java.lang.IllegalStateException: …"}`                        |
-| `find_endpoint` | Menelusuri request: route HTTP ke handler dan pemanggilnya, method gRPC ke proto dan implementasinya, topic ke producer dan consumer.                                | `{"query": "POST /api/orders/42/cancel"}`                               |
-| `git_history`   | Commit terbaru, kapan sebuah string muncul (pickaxe), blame, dan diff satu commit.                                                                                   | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
-| `switch_branch` | Opsional (`ALLOW_BRANCH_SWITCH`). Daftar branch sebuah repo, atau pindahkan ke branch lokal atau yang sudah di-fetch; tidak pernah fetch.             | `{"repo": "orders", "branch": "develop"}`                               |
+| Tool            | Gunakan untuk                                                                                                                                                                                  | Contoh input                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `list_repos`    | Melihat semua service: bahasa, framework, endpoint, topic, commit terakhir, status index. Filter berdasarkan nama, grup, atau bahasa.                                                          | `{"query": "order"}`                                                    |
+| `repo_overview` | Memetakan satu repo: file build, entrypoint, endpoint, topic, dan folder beserta jumlah filenya.                                                                                               | `{"repo": "orders", "path": "src/main"}`                                |
+| `search_code`   | Mencari teks di semua repo sekaligus, berperingkat dan dikelompokkan per file, lengkap dengan fungsi yang melingkupinya. Mode: `literal` (default), `word`, `regex`.                           | `{"query": "Order already cancelled"}`                                  |
+| `find_files`    | Mencari file berdasarkan nama atau path secara fuzzy ("ordctl" menemukan `OrderController.java`).                                                                                              | `{"query": "order controller"}`                                         |
+| `read_code`     | Membaca satu fungsi (`#Class.method`), satu baris (`:120`), rentang (`:120-180`), file kecil, atau outline file besar.                                                                         | `{"ref": "orders/src/…/OrderService.java#cancel"}`                      |
+| `find_symbol`   | Lompat ke definisi berdasarkan nama (exact, lalu prefix, lalu substring), daftar semua referensinya, atau telusuri call graph: siapa yang memanggilnya dan apa yang dipanggilnya, lintas repo. | `{"name": "OrderService.cancel", "mode": "callers"}`                    |
+| `triage_error`  | Tempel stack trace, baris log, pesan error, atau URL; dapatkan kode di baliknya.                                                                                                               | `{"text": "java.lang.IllegalStateException: …"}`                        |
+| `find_endpoint` | Menelusuri request: route HTTP ke handler dan pemanggilnya, method gRPC ke proto dan implementasinya, topic ke producer dan consumer.                                                          | `{"query": "POST /api/orders/42/cancel"}`                               |
+| `git_history`   | Commit terbaru, kapan sebuah string muncul (pickaxe), blame, dan diff satu commit.                                                                                                             | `{"repo": "orders", "action": "pickaxe", "query": "already cancelled"}` |
+| `switch_branch` | Opsional (`ALLOW_BRANCH_SWITCH`). Daftar branch sebuah repo, atau pindahkan ke branch lokal atau yang sudah di-fetch; tidak pernah fetch.                                                      | `{"repo": "orders", "branch": "develop"}`                               |
 
 Sesi debugging di ClickUp Brain biasanya seperti ini:
 
@@ -251,7 +256,7 @@ dilayani.
 | `CODEBASE_CONFIG`                                              | `./codebase.config.json` | File config lain.                                                                                                                               |
 | `REPOS`                                                        | tidak ada                | `nama=path;nama=path`. Kalau diisi, hanya repo ini yang dilayani (`roots`/`repos` di config dilewati). Restart `bun start` setelah mengubahnya. |
 | `EXTRA_BLOCKED`                                                | tidak ada                | Regex tambahan untuk nama file yang tidak boleh dibaca, dipisah koma.                                                                           |
-| `ALLOW_BRANCH_SWITCH`                                          | mati                     | `1` (semua repo) atau nama repo dipisah koma: menambah `switch_branch`. Lihat [pindah branch](#pindah-branch). |
+| `ALLOW_BRANCH_SWITCH`                                          | mati                     | `1` (semua repo) atau nama repo dipisah koma: menambah `switch_branch`. Lihat [pindah branch](#pindah-branch).                                  |
 | `RG_PATH`, `CODEBASE_NO_RIPGREP`                               | ripgrep bawaan           | Binary ripgrep lain, atau `1` untuk memaksa scanner JavaScript.                                                                                 |
 | `LOG_LEVEL`                                                    | `info`                   | `debug`, `info`, `warn`, atau `error`. Lihat [Membaca log](#membaca-log).                                                                       |
 | `TUNNEL`, `CF_TUNNEL_TOKEN`, `PINGGY_TOKEN`                    | sesuai platform          | Pengaturan tunnel untuk `bun tunnel`.                                                                                                           |
@@ -394,12 +399,12 @@ Untuk Cursor atau klien lain, perintahnya `bun` dengan argumen
 
 ## Bahasa dan framework yang didukung
 
-| Tier               | Bahasa                                                  | Yang Anda dapatkan                                                                                          |
-| ------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1                  | Java, Kotlin, Go, TypeScript dan JavaScript, Python, C# | Simbol tree-sitter, stack trace, statement log, serta ekstraksi HTTP, gRPC, dan topic untuk framework utama |
-| 2                  | PHP, Ruby, Rust, Scala, C, C++, Elixir                  | Simbol tree-sitter, plus stack trace dan route untuk PHP, Ruby, dan Elixir                                  |
-| 3                  | Swift, Dart, dan file teks lain apa pun                 | Pencarian, plus simbol dari pola baris                                                                      |
-| Kontrak dan config | `.proto`, YAML, JSON, SQL, Dockerfile, Makefile, …      | Pencarian; service gRPC dari `.proto`; tabel SQL                                                            |
+| Tier               | Bahasa                                                  | Yang Anda dapatkan                                                                                                                                                                                                                            |
+| ------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1                  | Java, Kotlin, Go, TypeScript dan JavaScript, Python, C# | Simbol tree-sitter, stack trace, statement log, serta ekstraksi HTTP, gRPC, dan topic untuk framework utama; call graph yang di-resolve lewat tipe dan import untuk Java, Kotlin, TypeScript, dan JavaScript, lewat nama untuk bahasa lainnya |
+| 2                  | Swift, PHP, Ruby, Rust, Scala, C, C++, Elixir           | Simbol tree-sitter, plus stack trace dan route untuk PHP, Ruby, dan Elixir; call graph lewat tipe untuk Swift, lewat nama untuk bahasa lainnya                                                                                                |
+| 3                  | Dart, dan file teks lain apa pun                        | Pencarian, plus simbol dari pola baris                                                                                                                                                                                                        |
+| Kontrak dan config | `.proto`, YAML, JSON, SQL, Dockerfile, Makefile, …      | Pencarian; service gRPC dari `.proto`; tabel SQL                                                                                                                                                                                              |
 
 | Jenis          | Framework yang dikenali                                                                                                                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,6 @@
 /** Ports: logging, time, the repo registry, the language registry and symbol parsing. */
 import type { ParsedTrace, Repo, SymbolDef } from '../core/model/domain.types.ts';
+import type { FileGraph } from '../core/model/graph.types.ts';
 import type { LanguagePack } from '../core/model/language-pack.types.ts';
 
 export type LogFields = Readonly<Record<string, string | number | boolean>>;
@@ -27,6 +28,13 @@ export interface LanguageRegistry {
   parseTrace(text: string): ParsedTrace | null;
 }
 
+export interface ParsedFile {
+  readonly symbols: readonly SymbolDef[];
+  readonly graph: FileGraph;
+}
+
 export interface SymbolParser {
   parse(pack: LanguagePack, text: string): Promise<readonly SymbolDef[]>;
+  /** Symbols and call graph from one parse; the indexer's entry point. */
+  analyze(pack: LanguagePack, text: string): Promise<ParsedFile>;
 }

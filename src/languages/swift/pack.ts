@@ -1,6 +1,7 @@
 /**
- * Swift, tier 3: no grammar, so outlines come from these regexes alone. A declaration keyword may
- * follow any attributes and modifiers (`@MainActor public final class`), but nothing that marks an
+ * Swift, tier 2: a tree-sitter grammar built from tree-sitter-swift (scripts/grammars), with a call
+ * graph that resolves names by type. The regexes are the fallback for huge or minified files: a
+ * declaration keyword may follow any attributes and modifiers (`@MainActor public final class`), but nothing that marks an
  * expression or a comment (`=`, braces, quotes, slashes). Extensions are reported as impl blocks:
  * the functions inside them belong to the extended type.
  */
@@ -9,8 +10,9 @@ import type { LanguagePack } from '../../core/model/language-pack.types.ts';
 export const swiftPack: LanguagePack = {
   id: 'swift',
   name: 'Swift',
-  tier: 3,
+  tier: 2,
   extensions: ['.swift'],
+  grammar: 'swift',
   symbolPatterns: [
     { kind: 'class', regex: /^[^={}"/]*?\bclass\s+(?!func\b|var\b|let\b)([A-Za-z_]\w*)/ },
     { kind: 'struct', regex: /^[^={}"/]*?\bstruct\s+([A-Za-z_]\w*)/ },
@@ -24,4 +26,5 @@ export const swiftPack: LanguagePack = {
   ],
   logCall:
     /\b(?:logger|log)\.(?:debug|info|notice|warning|error|critical|fault)\(|\bos_log\(|\bfatalError\(|\bthrow\s+[A-Z]\w*/,
+  graph: { queries: ['swift'], imports: 'types' },
 };

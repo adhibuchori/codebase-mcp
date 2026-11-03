@@ -10,6 +10,11 @@ export interface GrammarSpec {
   readonly version: string;
   /** Path of the .wasm file inside the package. */
   readonly wasm: string;
+  /**
+   * The package ships no .wasm: build it from the package's sources with this tree-sitter CLI
+   * version (`tree-sitter build --wasm`, which downloads its own wasi-sdk on first use).
+   */
+  readonly buildWithCli?: string;
   /** Tags queries inside packages, concatenated in order; empty when the query is our own. */
   readonly queries: readonly {
     readonly pkg: string;
@@ -28,7 +33,8 @@ export const GRAMMARS: readonly GrammarSpec[] = [
     pkg: 'tree-sitter-java',
     version: '0.23.5',
     wasm: 'tree-sitter-java.wasm',
-    queries: [tags('tree-sitter-java', '0.23.5')],
+    /* Our own: the packaged tags query plus records and enums. */
+    queries: [],
   },
   {
     id: 'kotlin',
@@ -127,5 +133,14 @@ export const GRAMMARS: readonly GrammarSpec[] = [
     version: '0.3.5',
     wasm: 'tree-sitter-elixir.wasm',
     queries: [tags('tree-sitter-elixir', '0.3.5')],
+  },
+  {
+    id: 'swift',
+    pkg: 'tree-sitter-swift',
+    version: '0.7.1',
+    wasm: '',
+    buildWithCli: '0.27.1',
+    /* Our own: the packaged query reports every property and local as a definition. */
+    queries: [],
   },
 ];
